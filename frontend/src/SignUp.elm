@@ -65,6 +65,7 @@ signUp model =
     , expect = Http.expectJson
     }
 
+
 -- VIEW
 view : SignUp -> Html Msg
 view model =
