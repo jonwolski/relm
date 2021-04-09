@@ -81,11 +81,14 @@ view : Model -> Browser.Document Msg
 view model =
   { title = "Relm Alright Cool"
   , body =
-      [ text "The current URL is: "
-      , b [] [ text (Url.toString model.url) ]
-      , ul []
-          [ viewLink "/home"
-          ]
+      [
+        windowed (Url.toString model.url) (
+        [ text "The current URL is: "
+        , ul [ class "tree-view"]
+            [ viewLink "/home"
+            ]
+        ]
+        )
       ]
   }
 
@@ -93,3 +96,19 @@ view model =
 viewLink : String -> Html msg
 viewLink path =
   li [] [ a [ href path ] [ text path ] ]
+
+windowed : String -> List (Html msg) -> Html msg
+windowed title content =
+    div [ class "window", id "main-window"]
+      [ div [ class "title-bar"]
+        [ div [ class "title-bar-text"]
+          [ text title ]
+        , div [ class "title-bar-controls"]
+          [ button [ attribute "aria-label" "Minimize" ] []
+          , button [ attribute "aria-label" "Maximize" ] []
+          , button [ attribute "aria-label" "Close" ] []
+          ]
+        ]
+      , div [ class "window-body", id "elm"]
+        content
+      ]
