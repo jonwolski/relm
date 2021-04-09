@@ -5,7 +5,8 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
 import Http
-
+import Json.Decode exposing (Decoder, field, map8, string, bool, int, nullable)
+import RemoteData exposing (RemoteData, WebData)
 
 
 -- MAIN
@@ -25,6 +26,34 @@ type alias SignUp =
   , submitted : Bool
   }
 
+type alias SignUpResponse =
+  { id: Int
+  , email: String
+  , createdAt: String -- This should probably be a DateTime
+  , updatedAt: String -- This should probably be a DateTime
+  , username: String
+  , bio: Maybe String
+  , image: Maybe String
+  , token: String
+  }
+
+signUpResponseDecoder : Decoder SignUpResponse
+signUpResponseDecoder =
+  field "user" signUpUserDecoder
+
+signUpUserDecoder : Decoder SignUpResponse
+signUpUserDecoder =
+  map8 SignUpResponse
+    (field "id" int)
+    (field "email" string)
+    (field "createdAt" string)
+    (field "updatedAt" string)
+    (field "username" string)
+    (field "bio" (nullable string))
+    (field "image" (nullable string))
+    (field "token" string)
+
+
 init : SignUp
 init = SignUp "" "" "" "" False
 
@@ -36,6 +65,7 @@ type Msg
   | Password String
   | PasswordAgain String
   | Validate
+  | SignUpResponseReceived (WebData SignUpResponse)
 
 
 update : Msg -> SignUp -> SignUp
@@ -56,13 +86,17 @@ update msg model =
     Validate ->
       { model | submitted = True }
 
+    SignUpResponseReceived _ ->
+      model -- we could do something with the token here
+
 
 signUp : SignUp -> Cmd Msg
 signUp model =
   Http.post
     { url = "http://localhost:6001/"
     , body = Http.emptyBody
-    , expect = Http.expectJson
+    , expect = signUpResponseDecoder
+               |> Http.expectJson (RemoteData.fromResult >> SignUpResponseReceived)
     }
 
 
