@@ -1,0 +1,25 @@
+name: build
+on: [push]
+jobs:
+  elm-compile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Elm environment
+        uses: JorelAli/setup-elm@v3
+        with:
+          elm-version: 0.19.1
+      - run: elm make src/Main.elm --output=elm.js
+      - run: mkdir dist
+      - run: cp index.html 404.html
+      - run: cp index.html 404.html dist
+      - name: Deploy 🚀
+        if: ${{ github.ref == 'ref/heads/main' }}
+        uses: JamesIves/github-pages-deploy-action@4.1.1
+        with:
+          branch: gh-pages
+          folder: dist
+
