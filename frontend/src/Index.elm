@@ -1,4 +1,4 @@
-module Index exposing (main)
+module Page.Index exposing (main)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
