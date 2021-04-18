@@ -14,7 +14,6 @@ jobs:
           elm-version: 0.19.1
       - run: elm make src/Main.elm --output=elm.js
       - run: mkdir dist
-      - run: "sed -i -e 's/ROOT_PATH/\\\"\\/relm\\\"/' index.html"
       - run: cp index.html 404.html
       - run: cp index.html 404.html elm.js dist
       - name: Deploy 🚀
