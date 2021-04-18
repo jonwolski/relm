@@ -1,41 +1,42 @@
 <!DOCTYPE HTML>
 <html>
-	<head>
-		<meta charset="UTF-8">
-		<title>Relm</title>
-		<link rel="stylesheet" href="https://unpkg.com/98.css@0.1.16/dist/98.css" integrity="sha384-AP98TR7KhoyH55LmEX/XUWqkX/ESzoB9qligjzAKy/iVKmZOwviwFwp/tRZQ9IiK" crossorigin="anonymous">
-		<style>
-			html { background: #557db8 }
-			body { padding: 0; margin: 0; }
+  <head>
+    <meta charset="UTF-8">
+    <title>Relm</title>
+    <link rel="stylesheet" href="https://unpkg.com/98.css@0.1.16/dist/98.css" integrity="sha384-AP98TR7KhoyH55LmEX/XUWqkX/ESzoB9qligjzAKy/iVKmZOwviwFwp/tRZQ9IiK" crossorigin="anonymous">
+    <style>
+      html { background: #557db8 }
+      body { padding: 0; margin: 0; }
       #main-window {
         width: auto;
         margin: 2em;
         min-width: 10em;
         min-height: 10em;
       }
-		</style>
-	</head>
+    </style>
+  </head>
 
-	<body>
-		<div class="window" id="main-window">
-			<div class="title-bar">
-				<div class="title-bar-text">A Window With Stuff In It</div>
-				<div class="title-bar-controls">
-					<button aria-label="Minimize"></button>
-					<button aria-label="Maximize"></button>
-					<button aria-label="Close"></button>
-				</div>
-			</div>
-			<div class="window-body" id="elm">
-			</div>
-		</div>
+  <body>
+    <div class="window" id="main-window">
+      <div class="title-bar">
+        <div class="title-bar-text">A Window With Stuff In It</div>
+        <div class="title-bar-controls">
+          <button aria-label="Minimize"></button>
+          <button aria-label="Maximize"></button>
+          <button aria-label="Close"></button>
+        </div>
+      </div>
+      <div class="window-body" id="elm">
+      </div>
+    </div>
 
-		<script src="./elm.js"></script>
-		<script>
-			var app = Elm.Main.init({
-				node: document.getElementById("elm")
-			});
-		</script>
+    <script src="./elm.js"></script>
+    <script>
+      var app = Elm.Main.init({
+        node: document.getElementById("elm")
+        ,flags: ROOT_PATH || null
+      });
+    </script>
 
-	</body>
+  </body>
 </html>
