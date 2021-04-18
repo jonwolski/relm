@@ -19,21 +19,31 @@ pushUrl route navKey =
     Nav.pushUrl navKey <| toString route
 
 
-parseUrl : Url -> Route
-parseUrl url =
-   case parse matchRoute url of
+parseUrl : Maybe String -> Url -> Route
+parseUrl rootContext url =
+   case parse (matchRoute rootContext) url of
        Just route -> route
        Nothing -> NotFound
 
 
-matchRoute : Parser (Route -> a) a
-matchRoute =
+matchRoute : Maybe String -> Parser (Route -> a) a
+matchRoute maybeRootPathString =
+    let
+        rootPath = parseRootPath maybeRootPathString
+    in
     oneOf
-        [ map Home top
---      , map Posts (s "posts")
---      , map NewPost (s "posts" </> s "new")
---      , map Post (s "posts" </> s "id")
+        [ map Home rootPath
+--      , map Posts (rootPath </> s "posts")
+--      , map NewPost (rootPath </> s "posts" </> s "new")
+--      , map Post (rootPath </> s "posts" </> s "id")
         ]
+
+
+parseRootPath : Maybe String -> Parser a a
+parseRootPath maybeRootPathString =
+    case maybeRootPathString of
+        Just path -> s path
+        Nothing -> top
 
 
 toString : Route -> String

@@ -4372,9 +4372,13 @@ function _Url_percentDecode(string)
 	{
 		return $elm$core$Maybe$Nothing;
 	}
-}var $author$project$Main$LinkClicked = function (a) {
+}var $elm$core$Maybe$Just = function (a) {
+	return {$: 'Just', a: a};
+};
+var $author$project$Main$LinkClicked = function (a) {
 	return {$: 'LinkClicked', a: a};
 };
+var $elm$core$Maybe$Nothing = {$: 'Nothing'};
 var $author$project$Main$UrlChanged = function (a) {
 	return {$: 'UrlChanged', a: a};
 };
@@ -4481,10 +4485,6 @@ var $elm$json$Json$Decode$OneOf = function (a) {
 };
 var $elm$core$Basics$False = {$: 'False'};
 var $elm$core$Basics$add = _Basics_add;
-var $elm$core$Maybe$Just = function (a) {
-	return {$: 'Just', a: a};
-};
-var $elm$core$Maybe$Nothing = {$: 'Nothing'};
 var $elm$core$String$all = _String_all;
 var $elm$core$Basics$and = _Basics_and;
 var $elm$core$Basics$append = _Utils_append;
@@ -5277,16 +5277,53 @@ var $elm$url$Url$Parser$oneOf = function (parsers) {
 				parsers);
 		});
 };
+var $elm$url$Url$Parser$s = function (str) {
+	return $elm$url$Url$Parser$Parser(
+		function (_v0) {
+			var visited = _v0.visited;
+			var unvisited = _v0.unvisited;
+			var params = _v0.params;
+			var frag = _v0.frag;
+			var value = _v0.value;
+			if (!unvisited.b) {
+				return _List_Nil;
+			} else {
+				var next = unvisited.a;
+				var rest = unvisited.b;
+				return _Utils_eq(next, str) ? _List_fromArray(
+					[
+						A5(
+						$elm$url$Url$Parser$State,
+						A2($elm$core$List$cons, next, visited),
+						rest,
+						params,
+						frag,
+						value)
+					]) : _List_Nil;
+			}
+		});
+};
 var $elm$url$Url$Parser$top = $elm$url$Url$Parser$Parser(
 	function (state) {
 		return _List_fromArray(
 			[state]);
 	});
-var $author$project$Route$matchRoute = $elm$url$Url$Parser$oneOf(
-	_List_fromArray(
-		[
-			A2($elm$url$Url$Parser$map, $author$project$Route$Home, $elm$url$Url$Parser$top)
-		]));
+var $author$project$Route$parseRootPath = function (maybeRootPathString) {
+	if (maybeRootPathString.$ === 'Just') {
+		var path = maybeRootPathString.a;
+		return $elm$url$Url$Parser$s(path);
+	} else {
+		return $elm$url$Url$Parser$top;
+	}
+};
+var $author$project$Route$matchRoute = function (maybeRootPathString) {
+	var rootPath = $author$project$Route$parseRootPath(maybeRootPathString);
+	return $elm$url$Url$Parser$oneOf(
+		_List_fromArray(
+			[
+				A2($elm$url$Url$Parser$map, $author$project$Route$Home, rootPath)
+			]));
+};
 var $elm$url$Url$Parser$getFirstMatch = function (states) {
 	getFirstMatch:
 	while (true) {
@@ -5917,25 +5954,33 @@ var $elm$url$Url$Parser$parse = F2(
 					url.fragment,
 					$elm$core$Basics$identity)));
 	});
-var $author$project$Route$parseUrl = function (url) {
-	var _v0 = A2($elm$url$Url$Parser$parse, $author$project$Route$matchRoute, url);
-	if (_v0.$ === 'Just') {
-		var route = _v0.a;
-		return route;
-	} else {
-		return $author$project$Route$NotFound;
-	}
-};
+var $author$project$Route$parseUrl = F2(
+	function (rootContext, url) {
+		var _v0 = A2(
+			$elm$url$Url$Parser$parse,
+			$author$project$Route$matchRoute(rootContext),
+			url);
+		if (_v0.$ === 'Just') {
+			var route = _v0.a;
+			return route;
+		} else {
+			return $author$project$Route$NotFound;
+		}
+	});
 var $author$project$Main$init = F3(
-	function (_v0, url, key) {
+	function (rootPath, url, key) {
 		var model = {
 			key: key,
 			page: $author$project$Main$NotFoundPage,
-			route: $author$project$Route$parseUrl(url)
+			rootPath: rootPath,
+			route: A2($author$project$Route$parseUrl, rootPath, url)
 		};
 		return $author$project$Main$initCurrentPage(
 			_Utils_Tuple2(model, $elm$core$Platform$Cmd$none));
 	});
+var $elm$json$Json$Decode$null = _Json_decodeNull;
+var $elm$json$Json$Decode$oneOf = _Json_oneOf;
+var $elm$json$Json$Decode$string = _Json_decodeString;
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $author$project$Main$subscriptions = function (_v0) {
@@ -6017,7 +6062,7 @@ var $author$project$Main$update = F2(
 						_Utils_update(
 							model,
 							{
-								route: $author$project$Route$parseUrl(url)
+								route: A2($author$project$Route$parseUrl, model.rootPath, url)
 							}),
 						$elm$core$Platform$Cmd$none));
 			default:
@@ -6119,24 +6164,33 @@ var $elm$html$Html$Attributes$href = function (url) {
 		_VirtualDom_noJavaScriptUri(url));
 };
 var $elm$html$Html$li = _VirtualDom_node('li');
-var $author$project$Main$viewLink = function (path) {
-	return A2(
-		$elm$html$Html$li,
-		_List_Nil,
-		_List_fromArray(
-			[
-				A2(
-				$elm$html$Html$a,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$href(path)
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text(path)
-					]))
-			]));
-};
+var $author$project$Main$viewLink = F2(
+	function (rootPath, path) {
+		var url = function () {
+			if (rootPath.$ === 'Just') {
+				var r = rootPath.a;
+				return '/' + (r + path);
+			} else {
+				return path;
+			}
+		}();
+		return A2(
+			$elm$html$Html$li,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$a,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$href(url)
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text(path)
+						]))
+				]));
+	});
 var $elm$virtual_dom$VirtualDom$attribute = F2(
 	function (key, value) {
 		return A2(
@@ -6236,8 +6290,8 @@ var $author$project$Main$view = function (model) {
 							]),
 						_List_fromArray(
 							[
-								$author$project$Main$viewLink('/'),
-								$author$project$Main$viewLink('/bad-link')
+								A2($author$project$Main$viewLink, model.rootPath, '/'),
+								A2($author$project$Main$viewLink, model.rootPath, '/bad-link')
 							])),
 						$author$project$Main$pageSpecificView(model)
 					]))
@@ -6248,4 +6302,9 @@ var $author$project$Main$view = function (model) {
 var $author$project$Main$main = $elm$browser$Browser$application(
 	{init: $author$project$Main$init, onUrlChange: $author$project$Main$UrlChanged, onUrlRequest: $author$project$Main$LinkClicked, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))(0)}});}(this));
+	$elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				$elm$json$Json$Decode$null($elm$core$Maybe$Nothing),
+				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $elm$json$Json$Decode$string)
+			])))(0)}});}(this));

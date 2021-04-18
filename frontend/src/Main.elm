@@ -5,6 +5,7 @@ import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Url
+import Url.Builder exposing (absolute)
 import Route exposing (Route)
 import Page.Home as Home
 
@@ -13,7 +14,7 @@ import Page.Home as Home
 -- MAIN
 
 
-main : Program () Model Msg
+main : Program (Maybe String) Model Msg
 main =
     Browser.application
         { init = init
@@ -33,6 +34,7 @@ type alias Model =
     { key : Nav.Key
     , page: Page
     , route : Route
+    , rootPath : Maybe String
     }
 
 
@@ -42,13 +44,14 @@ type Page
 --  | PostsPage
 
 
-init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
-init _ url key =
+init : Maybe String -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
+init rootPath url key =
     let
         model =
             { key = key
             , page = NotFoundPage
-            , route = Route.parseUrl url
+            , route = Route.parseUrl rootPath url
+            , rootPath = rootPath
             }
     in
     initCurrentPage ( model, Cmd.none )
@@ -93,7 +96,7 @@ update msg model =
         ( model, Nav.load href )
 
      ( UrlChanged url, _ ) ->
-        ( { model | route = Route.parseUrl url }
+        ( { model | route = Route.parseUrl model.rootPath url }
         , Cmd.none
         )
         |> initCurrentPage
@@ -136,8 +139,8 @@ view model =
         windowed (Route.toString model.route) (
         [ text <| "The current route is: " ++ routeName
         , ul [ class "tree-view"]
-            [ viewLink "/"
-            , viewLink "/bad-link"
+            [ viewLink model.rootPath "/"
+            , viewLink model.rootPath "/bad-link"
             ]
         , pageSpecificView model
         ]
@@ -158,9 +161,17 @@ notFoundView =
     h3 [] [ text "The page you requested was not found!" ]
 
 
-viewLink : String -> Html msg
-viewLink path =
-  li [] [ a [ href path ] [ text path ] ]
+viewLink : Maybe String -> String -> Html msg
+viewLink rootPath path =
+  let
+      url = case rootPath of
+          Just r ->
+             "/" ++ r ++ path
+
+          Nothing ->
+             path
+  in
+  li [] [ a [ href url ] [ text path ] ]
 
 
 windowed : String -> List (Html msg) -> Html msg
