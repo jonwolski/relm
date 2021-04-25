@@ -1,16 +1,20 @@
-module Page.Home exposing (Model, Msg, view, init, update)
+module Page.Home exposing (Model, Msg, init, update, view)
 
+import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Browser.Navigation as Nav
+
 
 type alias Model =
     { navKey : Nav.Key
     }
 
+
 init : Nav.Key -> ( Model, Cmd Msg )
 init navKey =
     ( { navKey = navKey }, Cmd.none )
+
+
 
 -- VIEW
 
@@ -25,10 +29,12 @@ view model =
 
 
 type Msg
-   = Default
+    = Default
+
 
 
 -- UPDATE
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =

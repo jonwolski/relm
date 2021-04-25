@@ -1,49 +1,51 @@
-module GlobalFeed exposing (main, Msg, Model, update, view, initialModel, init)
+module GlobalFeed exposing (Model, Msg, init, initialModel, main, update, view)
 
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (class, href)
+import Http
+import Iso8601
+import Json.Decode as Decode exposing (Decoder, Error(..), bool, field, int, list, nullable, string)
+import Json.Decode.Pipeline exposing (required)
 import RemoteData exposing (RemoteData, WebData)
 import Time
-import Http
-import Json.Decode as Decode exposing (Decoder, Error(..), int, list, string, nullable, bool, field)
-import Iso8601
-import Json.Decode.Pipeline exposing (required)
 import Url.Builder exposing (absolute)
 
 
-type alias RootPath = Maybe String
+type alias RootPath =
+    Maybe String
+
 
 type alias Author =
-    { username: String
-    , bio: Maybe String
-    , image: String
-    , following: Bool
+    { username : String
+    , bio : Maybe String
+    , image : String
+    , following : Bool
     }
 
 
 type alias Post =
-    { title: String
-    , slug: String
-    , body: String
-    , createdAt: Time.Posix
-    , updatedAt: Time.Posix
-    , tagList: List String
-    , description: String
-    , author: Author
-    , favorited: Bool
-    , favoritesCount: Int
+    { title : String
+    , slug : String
+    , body : String
+    , createdAt : Time.Posix
+    , updatedAt : Time.Posix
+    , tagList : List String
+    , description : String
+    , author : Author
+    , favorited : Bool
+    , favoritesCount : Int
     }
 
 
 type alias PostsResponse =
-    { articles: List Post
+    { articles : List Post
     }
 
 
 postsResponseDecoder : Decoder (List Post)
 postsResponseDecoder =
-    (field "articles" (list postDecoder))
+    field "articles" (list postDecoder)
 
 
 postDecoder : Decoder Post
@@ -69,6 +71,7 @@ authorDecoder =
         |> required "image" string
         |> required "following" bool
 
+
 type alias Model =
     { posts : WebData (List Post)
     , rootPath : Maybe String
@@ -87,22 +90,24 @@ initialModel =
     }
 
 
-init : Maybe String -> (Model, Cmd Msg)
+init : Maybe String -> ( Model, Cmd Msg )
 init rootPath =
     ( { initialModel | rootPath = rootPath }
-    , getPosts )
+    , getPosts
+    )
 
 
 getPosts : Cmd Msg
 getPosts =
     Http.get
         { url = "https://conduit.productionready.io/api/articles"
-        , expect = postsResponseDecoder
-            |> Http.expectJson (RemoteData.fromResult >> DataReceived)
+        , expect =
+            postsResponseDecoder
+                |> Http.expectJson (RemoteData.fromResult >> DataReceived)
         }
 
 
-update : Msg -> Model -> (Model, Cmd Msg)
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GetPosts ->
@@ -113,29 +118,38 @@ update msg model =
 
 
 view : Model -> Html Msg
-view model = div []
-             [ text "Hello Global Feed"
-             , div [] [ viewPostsRequest model ]
-             ]
+view model =
+    div []
+        [ text "Hello Global Feed"
+        , div [] [ viewPostsRequest model ]
+        ]
 
 
 viewPostsRequest : Model -> Html Msg
 viewPostsRequest model =
     case model.posts of
-        RemoteData.NotAsked -> text ""
-        RemoteData.Loading -> viewLoading
-        RemoteData.Failure httpError -> viewError httpError
-        RemoteData.Success posts -> viewPosts model.rootPath posts
+        RemoteData.NotAsked ->
+            text ""
+
+        RemoteData.Loading ->
+            viewLoading
+
+        RemoteData.Failure httpError ->
+            viewError httpError
+
+        RemoteData.Success posts ->
+            viewPosts model.rootPath posts
 
 
 viewLoading : Html Msg
 viewLoading =
-    ul [ class "tree-view"]
-        [ li [] [ text "Loading ..." ]]
+    ul [ class "tree-view" ]
+        [ li [] [ text "Loading ..." ] ]
+
 
 viewPosts : RootPath -> List Post -> Html Msg
 viewPosts rootPath posts =
-    ul [ class "tree-view"]
+    ul [ class "tree-view" ]
         (List.map (viewPost rootPath) posts)
 
 
@@ -150,7 +164,7 @@ viewPost rootPath post =
 linkToPost : Maybe String -> String -> String
 linkToPost rootPath slug =
     case rootPath of
-        Just(root) ->
+        Just root ->
             absolute [ root, "posts", slug ] []
 
         Nothing ->
@@ -158,7 +172,8 @@ linkToPost rootPath slug =
 
 
 viewError : Http.Error -> Html Msg
-viewError = text << buildErrorMessage
+viewError =
+    text << buildErrorMessage
 
 
 buildErrorMessage : Http.Error -> String
@@ -180,11 +195,11 @@ buildErrorMessage httpError =
             message
 
 
-
 main : Program (Maybe String) Model Msg
-main = Browser.element
-    { init = init
-    , view = view
-    , update = update
-    , subscriptions = \_ -> Sub.none
-    }
+main =
+    Browser.element
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = \_ -> Sub.none
+        }

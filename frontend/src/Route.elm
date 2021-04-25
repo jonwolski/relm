@@ -8,6 +8,9 @@ import Url.Parser exposing (..)
 type Route
     = NotFound
     | Home
+
+
+
 --  | Posts
 --  | Post PostId
 --  | NewPost
@@ -21,29 +24,37 @@ pushUrl route navKey =
 
 parseUrl : Maybe String -> Url -> Route
 parseUrl rootContext url =
-   case parse (matchRoute rootContext) url of
-       Just route -> route
-       Nothing -> NotFound
+    case parse (matchRoute rootContext) url of
+        Just route ->
+            route
+
+        Nothing ->
+            NotFound
 
 
 matchRoute : Maybe String -> Parser (Route -> a) a
 matchRoute maybeRootPathString =
     let
-        rootPath = parseRootPath maybeRootPathString
+        rootPath =
+            parseRootPath maybeRootPathString
     in
     oneOf
         [ map Home rootPath
---      , map Posts (rootPath </> s "posts")
---      , map NewPost (rootPath </> s "posts" </> s "new")
---      , map Post (rootPath </> s "posts" </> s "id")
+
+        --      , map Posts (rootPath </> s "posts")
+        --      , map NewPost (rootPath </> s "posts" </> s "new")
+        --      , map Post (rootPath </> s "posts" </> s "id")
         ]
 
 
 parseRootPath : Maybe String -> Parser a a
 parseRootPath maybeRootPathString =
     case maybeRootPathString of
-        Just path -> s path
-        Nothing -> top
+        Just path ->
+            s path
+
+        Nothing ->
+            top
 
 
 toString : Route -> String
@@ -54,4 +65,3 @@ toString route =
 
         Home ->
             "Home"
-
