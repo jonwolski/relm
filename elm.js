@@ -4677,7 +4677,44 @@ function _Url_percentDecode(string)
 	{
 		return $elm$core$Maybe$Nothing;
 	}
-}var $elm$core$Maybe$Just = function (a) {
+}
+
+
+var _Bitwise_and = F2(function(a, b)
+{
+	return a & b;
+});
+
+var _Bitwise_or = F2(function(a, b)
+{
+	return a | b;
+});
+
+var _Bitwise_xor = F2(function(a, b)
+{
+	return a ^ b;
+});
+
+function _Bitwise_complement(a)
+{
+	return ~a;
+};
+
+var _Bitwise_shiftLeftBy = F2(function(offset, a)
+{
+	return a << offset;
+});
+
+var _Bitwise_shiftRightBy = F2(function(offset, a)
+{
+	return a >> offset;
+});
+
+var _Bitwise_shiftRightZfBy = F2(function(offset, a)
+{
+	return a >>> offset;
+});
+var $elm$core$Maybe$Just = function (a) {
 	return {$: 'Just', a: a};
 };
 var $author$project$Main$LinkClicked = function (a) {
@@ -6283,7 +6320,7 @@ var $elm$http$Http$get = function (r) {
 };
 var $elm$json$Json$Decode$field = _Json_decodeField;
 var $elm$json$Json$Decode$list = _Json_decodeList;
-var $author$project$GlobalFeed$Post = function (title) {
+var $author$project$Page$Post$Post = function (title) {
 	return function (slug) {
 		return function (body) {
 			return function (createdAt) {
@@ -6304,7 +6341,7 @@ var $author$project$GlobalFeed$Post = function (title) {
 		};
 	};
 };
-var $author$project$GlobalFeed$Author = F4(
+var $author$project$Page$Post$Author = F4(
 	function (username, bio, image, following) {
 		return {bio: bio, following: following, image: image, username: username};
 	});
@@ -6328,7 +6365,7 @@ var $NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required = F3(
 			decoder);
 	});
 var $elm$json$Json$Decode$string = _Json_decodeString;
-var $author$project$GlobalFeed$authorDecoder = A3(
+var $author$project$Page$Post$authorDecoder = A3(
 	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 	'following',
 	$elm$json$Json$Decode$bool,
@@ -6344,7 +6381,7 @@ var $author$project$GlobalFeed$authorDecoder = A3(
 				$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 				'username',
 				$elm$json$Json$Decode$string,
-				$elm$json$Json$Decode$succeed($author$project$GlobalFeed$Author)))));
+				$elm$json$Json$Decode$succeed($author$project$Page$Post$Author)))));
 var $elm$json$Json$Decode$andThen = _Json_andThen;
 var $elm$parser$Parser$deadEndsToString = function (deadEnds) {
 	return 'TODO deadEndsToString';
@@ -7132,7 +7169,7 @@ var $rtfeldman$elm_iso8601_date_strings$Iso8601$decoder = A2(
 	},
 	$elm$json$Json$Decode$string);
 var $elm$json$Json$Decode$int = _Json_decodeInt;
-var $author$project$GlobalFeed$postDecoder = A3(
+var $author$project$Page$Post$postDecoder = A3(
 	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 	'favoritesCount',
 	$elm$json$Json$Decode$int,
@@ -7143,7 +7180,7 @@ var $author$project$GlobalFeed$postDecoder = A3(
 		A3(
 			$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 			'author',
-			$author$project$GlobalFeed$authorDecoder,
+			$author$project$Page$Post$authorDecoder,
 			A3(
 				$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 				'description',
@@ -7172,17 +7209,17 @@ var $author$project$GlobalFeed$postDecoder = A3(
 										$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 										'title',
 										$elm$json$Json$Decode$string,
-										$elm$json$Json$Decode$succeed($author$project$GlobalFeed$Post)))))))))));
-var $author$project$GlobalFeed$postsResponseDecoder = A2(
+										$elm$json$Json$Decode$succeed($author$project$Page$Post$Post)))))))))));
+var $author$project$Page$Post$postsResponseDecoder = A2(
 	$elm$json$Json$Decode$field,
 	'articles',
-	$elm$json$Json$Decode$list($author$project$GlobalFeed$postDecoder));
+	$elm$json$Json$Decode$list($author$project$Page$Post$postDecoder));
 var $author$project$GlobalFeed$getPosts = $elm$http$Http$get(
 	{
 		expect: A2(
 			$elm$http$Http$expectJson,
 			A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$GlobalFeed$DataReceived),
-			$author$project$GlobalFeed$postsResponseDecoder),
+			$author$project$Page$Post$postsResponseDecoder),
 		url: 'https://conduit.productionready.io/api/articles'
 	});
 var $krisajenkins$remotedata$RemoteData$Loading = {$: 'Loading'};
@@ -7200,6 +7237,12 @@ var $author$project$Main$HomePage = function (a) {
 var $author$project$Main$HomePageMsg = function (a) {
 	return {$: 'HomePageMsg', a: a};
 };
+var $author$project$Main$PostPage = function (a) {
+	return {$: 'PostPage', a: a};
+};
+var $author$project$Main$PostPageMsg = function (a) {
+	return {$: 'PostPageMsg', a: a};
+};
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$Page$Home$init = function (navKey) {
@@ -7207,21 +7250,59 @@ var $author$project$Page$Home$init = function (navKey) {
 		{navKey: navKey},
 		$elm$core$Platform$Cmd$none);
 };
+var $author$project$Page$Post$PostReceived = function (a) {
+	return {$: 'PostReceived', a: a};
+};
+var $author$project$Page$Post$postResponseDecoder = A2($elm$json$Json$Decode$field, 'article', $author$project$Page$Post$postDecoder);
+var $author$project$Page$Post$getPost = function (slug) {
+	return $elm$http$Http$get(
+		{
+			expect: A2(
+				$elm$http$Http$expectJson,
+				A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$Page$Post$PostReceived),
+				$author$project$Page$Post$postResponseDecoder),
+			url: 'https://conduit.productionready.io/api/articles/' + slug
+		});
+};
+var $author$project$Page$Post$idToString = function (_v0) {
+	var s = _v0.a;
+	return s;
+};
+var $author$project$Page$Post$initialModel = F2(
+	function (postId, navKey) {
+		return {navKey: navKey, post: $krisajenkins$remotedata$RemoteData$Loading, postId: postId};
+	});
+var $author$project$Page$Post$init = F2(
+	function (postId, navKey) {
+		var slug = $author$project$Page$Post$idToString(postId);
+		return _Utils_Tuple2(
+			A2($author$project$Page$Post$initialModel, postId, navKey),
+			$author$project$Page$Post$getPost(slug));
+	});
 var $elm$core$Platform$Cmd$map = _Platform_map;
 var $author$project$Main$initCurrentPage = function (_v0) {
 	var model = _v0.a;
 	var existingCmds = _v0.b;
 	var _v1 = function () {
 		var _v2 = model.route;
-		if (_v2.$ === 'NotFound') {
-			return _Utils_Tuple2($author$project$Main$NotFoundPage, $elm$core$Platform$Cmd$none);
-		} else {
-			var _v3 = $author$project$Page$Home$init(model.key);
-			var pageModel = _v3.a;
-			var pageCmd = _v3.b;
-			return _Utils_Tuple2(
-				$author$project$Main$HomePage(pageModel),
-				A2($elm$core$Platform$Cmd$map, $author$project$Main$HomePageMsg, pageCmd));
+		switch (_v2.$) {
+			case 'NotFound':
+				return _Utils_Tuple2($author$project$Main$NotFoundPage, $elm$core$Platform$Cmd$none);
+			case 'Home':
+				var _v3 = $author$project$Page$Home$init(model.key);
+				var pageModel = _v3.a;
+				var pageCmd = _v3.b;
+				return _Utils_Tuple2(
+					$author$project$Main$HomePage(pageModel),
+					A2($elm$core$Platform$Cmd$map, $author$project$Main$HomePageMsg, pageCmd));
+			default:
+				var postId = _v2.a;
+				var _v4 = A2($author$project$Page$Post$init, postId, model.key);
+				var pageModel = _v4.a;
+				var pageCmd = _v4.b;
+				return _Utils_Tuple2(
+					$author$project$Main$PostPage(pageModel),
+					A2($elm$core$Platform$Cmd$map, $author$project$Main$PostPageMsg, pageCmd));
 		}
 	}();
 	var currentPage = _v1.a;
@@ -7236,6 +7317,17 @@ var $author$project$Main$initCurrentPage = function (_v0) {
 };
 var $author$project$Route$NotFound = {$: 'NotFound'};
 var $author$project$Route$Home = {$: 'Home'};
+var $author$project$Route$Post = function (a) {
+	return {$: 'Post', a: a};
+};
+var $author$project$Page$Post$PostId = function (a) {
+	return {$: 'PostId', a: a};
+};
+var $elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
 var $elm$url$Url$Parser$Parser = function (a) {
 	return {$: 'Parser', a: a};
 };
@@ -7243,6 +7335,43 @@ var $elm$url$Url$Parser$State = F5(
 	function (visited, unvisited, params, frag, value) {
 		return {frag: frag, params: params, unvisited: unvisited, value: value, visited: visited};
 	});
+var $elm$url$Url$Parser$custom = F2(
+	function (tipe, stringToSomething) {
+		return $elm$url$Url$Parser$Parser(
+			function (_v0) {
+				var visited = _v0.visited;
+				var unvisited = _v0.unvisited;
+				var params = _v0.params;
+				var frag = _v0.frag;
+				var value = _v0.value;
+				if (!unvisited.b) {
+					return _List_Nil;
+				} else {
+					var next = unvisited.a;
+					var rest = unvisited.b;
+					var _v2 = stringToSomething(next);
+					if (_v2.$ === 'Just') {
+						var nextValue = _v2.a;
+						return _List_fromArray(
+							[
+								A5(
+								$elm$url$Url$Parser$State,
+								A2($elm$core$List$cons, next, visited),
+								rest,
+								params,
+								frag,
+								value(nextValue))
+							]);
+					} else {
+						return _List_Nil;
+					}
+				}
+			});
+	});
+var $author$project$Page$Post$idParser = A2(
+	$elm$url$Url$Parser$custom,
+	'POSTID',
+	A2($elm$core$Basics$composeL, $elm$core$Maybe$Just, $author$project$Page$Post$PostId));
 var $elm$url$Url$Parser$mapState = F2(
 	function (func, _v0) {
 		var visited = _v0.visited;
@@ -7342,12 +7471,34 @@ var $author$project$Route$parseRootPath = function (maybeRootPathString) {
 		return $elm$url$Url$Parser$top;
 	}
 };
+var $elm$url$Url$Parser$slash = F2(
+	function (_v0, _v1) {
+		var parseBefore = _v0.a;
+		var parseAfter = _v1.a;
+		return $elm$url$Url$Parser$Parser(
+			function (state) {
+				return A2(
+					$elm$core$List$concatMap,
+					parseAfter,
+					parseBefore(state));
+			});
+	});
 var $author$project$Route$matchRoute = function (maybeRootPathString) {
 	var rootPath = $author$project$Route$parseRootPath(maybeRootPathString);
 	return $elm$url$Url$Parser$oneOf(
 		_List_fromArray(
 			[
-				A2($elm$url$Url$Parser$map, $author$project$Route$Home, rootPath)
+				A2($elm$url$Url$Parser$map, $author$project$Route$Home, rootPath),
+				A2(
+				$elm$url$Url$Parser$map,
+				$author$project$Route$Post,
+				A2(
+					$elm$url$Url$Parser$slash,
+					rootPath,
+					A2(
+						$elm$url$Url$Parser$slash,
+						$elm$url$Url$Parser$s('posts'),
+						$author$project$Page$Post$idParser)))
 			]));
 };
 var $elm$url$Url$Parser$getFirstMatch = function (states) {
@@ -7566,63 +7717,102 @@ var $author$project$Page$Home$update = F2(
 	function (msg, model) {
 		return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 	});
+var $author$project$Page$Post$update = F2(
+	function (msg, model) {
+		if (msg.$ === 'GetPost') {
+			var slug = msg.a;
+			return _Utils_Tuple2(
+				_Utils_update(
+					model,
+					{post: $krisajenkins$remotedata$RemoteData$Loading}),
+				$author$project$Page$Post$getPost(slug));
+		} else {
+			var post = msg.a;
+			return _Utils_Tuple2(
+				_Utils_update(
+					model,
+					{post: post}),
+				$elm$core$Platform$Cmd$none);
+		}
+	});
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		var _v0 = _Utils_Tuple2(msg, model.page);
-		switch (_v0.a.$) {
-			case 'LinkClicked':
-				if (_v0.a.a.$ === 'Internal') {
-					var url = _v0.a.a.a;
-					return _Utils_Tuple2(
-						model,
-						A2(
-							$elm$browser$Browser$Navigation$pushUrl,
-							model.key,
-							$elm$url$Url$toString(url)));
-				} else {
-					var href = _v0.a.a.a;
-					return _Utils_Tuple2(
-						model,
-						$elm$browser$Browser$Navigation$load(href));
-				}
-			case 'UrlChanged':
-				var url = _v0.a.a;
-				return $author$project$Main$initCurrentPage(
-					_Utils_Tuple2(
-						_Utils_update(
+		_v0$6:
+		while (true) {
+			switch (_v0.a.$) {
+				case 'LinkClicked':
+					if (_v0.a.a.$ === 'Internal') {
+						var url = _v0.a.a.a;
+						return _Utils_Tuple2(
 							model,
-							{
-								route: A2($author$project$Route$parseUrl, model.rootPath, url)
-							}),
-						$elm$core$Platform$Cmd$none));
-			case 'GlobalFeedMsg':
-				var subMsg = _v0.a.a;
-				var _v1 = A2($author$project$GlobalFeed$update, subMsg, model.globalFeed);
-				var updatedFeedModel = _v1.a;
-				var updatedCmd = _v1.b;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{globalFeed: updatedFeedModel}),
-					A2($elm$core$Platform$Cmd$map, $author$project$Main$GlobalFeedMsg, updatedCmd));
-			default:
-				if (_v0.b.$ === 'HomePage') {
+							A2(
+								$elm$browser$Browser$Navigation$pushUrl,
+								model.key,
+								$elm$url$Url$toString(url)));
+					} else {
+						var href = _v0.a.a.a;
+						return _Utils_Tuple2(
+							model,
+							$elm$browser$Browser$Navigation$load(href));
+					}
+				case 'UrlChanged':
+					var url = _v0.a.a;
+					return $author$project$Main$initCurrentPage(
+						_Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									route: A2($author$project$Route$parseUrl, model.rootPath, url)
+								}),
+							$elm$core$Platform$Cmd$none));
+				case 'GlobalFeedMsg':
 					var subMsg = _v0.a.a;
-					var pageModel = _v0.b.a;
-					var _v2 = A2($author$project$Page$Home$update, subMsg, pageModel);
-					var updatedPageModel = _v2.a;
-					var updatedCmd = _v2.b;
+					var _v1 = A2($author$project$GlobalFeed$update, subMsg, model.globalFeed);
+					var updatedFeedModel = _v1.a;
+					var updatedCmd = _v1.b;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{
-								page: $author$project$Main$HomePage(updatedPageModel)
-							}),
-						A2($elm$core$Platform$Cmd$map, $author$project$Main$HomePageMsg, updatedCmd));
-				} else {
-					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-				}
+							{globalFeed: updatedFeedModel}),
+						A2($elm$core$Platform$Cmd$map, $author$project$Main$GlobalFeedMsg, updatedCmd));
+				case 'HomePageMsg':
+					if (_v0.b.$ === 'HomePage') {
+						var subMsg = _v0.a.a;
+						var pageModel = _v0.b.a;
+						var _v2 = A2($author$project$Page$Home$update, subMsg, pageModel);
+						var updatedPageModel = _v2.a;
+						var updatedCmd = _v2.b;
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									page: $author$project$Main$HomePage(updatedPageModel)
+								}),
+							A2($elm$core$Platform$Cmd$map, $author$project$Main$HomePageMsg, updatedCmd));
+					} else {
+						break _v0$6;
+					}
+				default:
+					if (_v0.b.$ === 'PostPage') {
+						var subMsg = _v0.a.a;
+						var pageModel = _v0.b.a;
+						var _v3 = A2($author$project$Page$Post$update, subMsg, pageModel);
+						var updatedPageModel = _v3.a;
+						var updatedCmd = _v3.b;
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									page: $author$project$Main$PostPage(updatedPageModel)
+								}),
+							A2($elm$core$Platform$Cmd$map, $author$project$Main$PostPageMsg, updatedCmd));
+					} else {
+						break _v0$6;
+					}
+			}
 		}
+		return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 	});
 var $elm$json$Json$Encode$string = _Json_wrap;
 var $elm$html$Html$Attributes$stringProperty = F2(
@@ -7676,23 +7866,435 @@ var $author$project$Page$Home$view = function (model) {
 					]))
 			]));
 };
+var $author$project$Page$Post$GetPost = function (a) {
+	return {$: 'GetPost', a: a};
+};
+var $author$project$Error$buildErrorMessage = function (httpError) {
+	switch (httpError.$) {
+		case 'BadUrl':
+			var message = httpError.a;
+			return message;
+		case 'Timeout':
+			return 'Server is taking too long to respond. Please try again later.';
+		case 'NetworkError':
+			return 'Unable to reach server.';
+		case 'BadStatus':
+			var statusCode = httpError.a;
+			return 'Request failed with status code: ' + $elm$core$String$fromInt(statusCode);
+		default:
+			var message = httpError.a;
+			return message;
+	}
+};
+var $elm$html$Html$button = _VirtualDom_node('button');
+var $elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var $elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var $elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'click',
+		$elm$json$Json$Decode$succeed(msg));
+};
+var $elm$html$Html$cite = _VirtualDom_node('cite');
+var $elm$html$Html$Attributes$datetime = _VirtualDom_attribute('datetime');
+var $rtfeldman$elm_iso8601_date_strings$Iso8601$fromMonth = function (month) {
+	switch (month.$) {
+		case 'Jan':
+			return 1;
+		case 'Feb':
+			return 2;
+		case 'Mar':
+			return 3;
+		case 'Apr':
+			return 4;
+		case 'May':
+			return 5;
+		case 'Jun':
+			return 6;
+		case 'Jul':
+			return 7;
+		case 'Aug':
+			return 8;
+		case 'Sep':
+			return 9;
+		case 'Oct':
+			return 10;
+		case 'Nov':
+			return 11;
+		default:
+			return 12;
+	}
+};
+var $elm$time$Time$flooredDiv = F2(
+	function (numerator, denominator) {
+		return $elm$core$Basics$floor(numerator / denominator);
+	});
+var $elm$time$Time$posixToMillis = function (_v0) {
+	var millis = _v0.a;
+	return millis;
+};
+var $elm$time$Time$toAdjustedMinutesHelp = F3(
+	function (defaultOffset, posixMinutes, eras) {
+		toAdjustedMinutesHelp:
+		while (true) {
+			if (!eras.b) {
+				return posixMinutes + defaultOffset;
+			} else {
+				var era = eras.a;
+				var olderEras = eras.b;
+				if (_Utils_cmp(era.start, posixMinutes) < 0) {
+					return posixMinutes + era.offset;
+				} else {
+					var $temp$defaultOffset = defaultOffset,
+						$temp$posixMinutes = posixMinutes,
+						$temp$eras = olderEras;
+					defaultOffset = $temp$defaultOffset;
+					posixMinutes = $temp$posixMinutes;
+					eras = $temp$eras;
+					continue toAdjustedMinutesHelp;
+				}
+			}
+		}
+	});
+var $elm$time$Time$toAdjustedMinutes = F2(
+	function (_v0, time) {
+		var defaultOffset = _v0.a;
+		var eras = _v0.b;
+		return A3(
+			$elm$time$Time$toAdjustedMinutesHelp,
+			defaultOffset,
+			A2(
+				$elm$time$Time$flooredDiv,
+				$elm$time$Time$posixToMillis(time),
+				60000),
+			eras);
+	});
+var $elm$core$Basics$ge = _Utils_ge;
+var $elm$time$Time$toCivil = function (minutes) {
+	var rawDay = A2($elm$time$Time$flooredDiv, minutes, 60 * 24) + 719468;
+	var era = (((rawDay >= 0) ? rawDay : (rawDay - 146096)) / 146097) | 0;
+	var dayOfEra = rawDay - (era * 146097);
+	var yearOfEra = ((((dayOfEra - ((dayOfEra / 1460) | 0)) + ((dayOfEra / 36524) | 0)) - ((dayOfEra / 146096) | 0)) / 365) | 0;
+	var dayOfYear = dayOfEra - (((365 * yearOfEra) + ((yearOfEra / 4) | 0)) - ((yearOfEra / 100) | 0));
+	var mp = (((5 * dayOfYear) + 2) / 153) | 0;
+	var month = mp + ((mp < 10) ? 3 : (-9));
+	var year = yearOfEra + (era * 400);
+	return {
+		day: (dayOfYear - ((((153 * mp) + 2) / 5) | 0)) + 1,
+		month: month,
+		year: year + ((month <= 2) ? 1 : 0)
+	};
+};
+var $elm$time$Time$toDay = F2(
+	function (zone, time) {
+		return $elm$time$Time$toCivil(
+			A2($elm$time$Time$toAdjustedMinutes, zone, time)).day;
+	});
+var $elm$time$Time$toHour = F2(
+	function (zone, time) {
+		return A2(
+			$elm$core$Basics$modBy,
+			24,
+			A2(
+				$elm$time$Time$flooredDiv,
+				A2($elm$time$Time$toAdjustedMinutes, zone, time),
+				60));
+	});
+var $elm$time$Time$toMillis = F2(
+	function (_v0, time) {
+		return A2(
+			$elm$core$Basics$modBy,
+			1000,
+			$elm$time$Time$posixToMillis(time));
+	});
+var $elm$time$Time$toMinute = F2(
+	function (zone, time) {
+		return A2(
+			$elm$core$Basics$modBy,
+			60,
+			A2($elm$time$Time$toAdjustedMinutes, zone, time));
+	});
+var $elm$time$Time$Apr = {$: 'Apr'};
+var $elm$time$Time$Aug = {$: 'Aug'};
+var $elm$time$Time$Dec = {$: 'Dec'};
+var $elm$time$Time$Feb = {$: 'Feb'};
+var $elm$time$Time$Jan = {$: 'Jan'};
+var $elm$time$Time$Jul = {$: 'Jul'};
+var $elm$time$Time$Jun = {$: 'Jun'};
+var $elm$time$Time$Mar = {$: 'Mar'};
+var $elm$time$Time$May = {$: 'May'};
+var $elm$time$Time$Nov = {$: 'Nov'};
+var $elm$time$Time$Oct = {$: 'Oct'};
+var $elm$time$Time$Sep = {$: 'Sep'};
+var $elm$time$Time$toMonth = F2(
+	function (zone, time) {
+		var _v0 = $elm$time$Time$toCivil(
+			A2($elm$time$Time$toAdjustedMinutes, zone, time)).month;
+		switch (_v0) {
+			case 1:
+				return $elm$time$Time$Jan;
+			case 2:
+				return $elm$time$Time$Feb;
+			case 3:
+				return $elm$time$Time$Mar;
+			case 4:
+				return $elm$time$Time$Apr;
+			case 5:
+				return $elm$time$Time$May;
+			case 6:
+				return $elm$time$Time$Jun;
+			case 7:
+				return $elm$time$Time$Jul;
+			case 8:
+				return $elm$time$Time$Aug;
+			case 9:
+				return $elm$time$Time$Sep;
+			case 10:
+				return $elm$time$Time$Oct;
+			case 11:
+				return $elm$time$Time$Nov;
+			default:
+				return $elm$time$Time$Dec;
+		}
+	});
+var $elm$core$String$cons = _String_cons;
+var $elm$core$String$fromChar = function (_char) {
+	return A2($elm$core$String$cons, _char, '');
+};
+var $elm$core$Bitwise$and = _Bitwise_and;
+var $elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
+var $elm$core$String$repeatHelp = F3(
+	function (n, chunk, result) {
+		return (n <= 0) ? result : A3(
+			$elm$core$String$repeatHelp,
+			n >> 1,
+			_Utils_ap(chunk, chunk),
+			(!(n & 1)) ? result : _Utils_ap(result, chunk));
+	});
+var $elm$core$String$repeat = F2(
+	function (n, chunk) {
+		return A3($elm$core$String$repeatHelp, n, chunk, '');
+	});
+var $elm$core$String$padLeft = F3(
+	function (n, _char, string) {
+		return _Utils_ap(
+			A2(
+				$elm$core$String$repeat,
+				n - $elm$core$String$length(string),
+				$elm$core$String$fromChar(_char)),
+			string);
+	});
+var $rtfeldman$elm_iso8601_date_strings$Iso8601$toPaddedString = F2(
+	function (digits, time) {
+		return A3(
+			$elm$core$String$padLeft,
+			digits,
+			_Utils_chr('0'),
+			$elm$core$String$fromInt(time));
+	});
+var $elm$time$Time$toSecond = F2(
+	function (_v0, time) {
+		return A2(
+			$elm$core$Basics$modBy,
+			60,
+			A2(
+				$elm$time$Time$flooredDiv,
+				$elm$time$Time$posixToMillis(time),
+				1000));
+	});
+var $elm$time$Time$toYear = F2(
+	function (zone, time) {
+		return $elm$time$Time$toCivil(
+			A2($elm$time$Time$toAdjustedMinutes, zone, time)).year;
+	});
+var $elm$time$Time$Zone = F2(
+	function (a, b) {
+		return {$: 'Zone', a: a, b: b};
+	});
+var $elm$time$Time$utc = A2($elm$time$Time$Zone, 0, _List_Nil);
+var $rtfeldman$elm_iso8601_date_strings$Iso8601$fromTime = function (time) {
+	return A2(
+		$rtfeldman$elm_iso8601_date_strings$Iso8601$toPaddedString,
+		4,
+		A2($elm$time$Time$toYear, $elm$time$Time$utc, time)) + ('-' + (A2(
+		$rtfeldman$elm_iso8601_date_strings$Iso8601$toPaddedString,
+		2,
+		$rtfeldman$elm_iso8601_date_strings$Iso8601$fromMonth(
+			A2($elm$time$Time$toMonth, $elm$time$Time$utc, time))) + ('-' + (A2(
+		$rtfeldman$elm_iso8601_date_strings$Iso8601$toPaddedString,
+		2,
+		A2($elm$time$Time$toDay, $elm$time$Time$utc, time)) + ('T' + (A2(
+		$rtfeldman$elm_iso8601_date_strings$Iso8601$toPaddedString,
+		2,
+		A2($elm$time$Time$toHour, $elm$time$Time$utc, time)) + (':' + (A2(
+		$rtfeldman$elm_iso8601_date_strings$Iso8601$toPaddedString,
+		2,
+		A2($elm$time$Time$toMinute, $elm$time$Time$utc, time)) + (':' + (A2(
+		$rtfeldman$elm_iso8601_date_strings$Iso8601$toPaddedString,
+		2,
+		A2($elm$time$Time$toSecond, $elm$time$Time$utc, time)) + ('.' + (A2(
+		$rtfeldman$elm_iso8601_date_strings$Iso8601$toPaddedString,
+		3,
+		A2($elm$time$Time$toMillis, $elm$time$Time$utc, time)) + 'Z'))))))))))));
+};
+var $elm$html$Html$time = _VirtualDom_node('time');
+var $author$project$Page$Post$viewPost = function (post) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('container')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$h1,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('logo-font')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(post.title)
+					])),
+				A2(
+				$elm$html$Html$cite,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text(post.author.username)
+					])),
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('publishedDate')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Last updated at'),
+						A2(
+						$elm$html$Html$time,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$datetime(
+								$rtfeldman$elm_iso8601_date_strings$Iso8601$fromTime(post.updatedAt))
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text(
+								$rtfeldman$elm_iso8601_date_strings$Iso8601$fromTime(post.updatedAt))
+							]))
+					])),
+				A2(
+				$elm$html$Html$div,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text(post.body)
+					]))
+			]));
+};
+var $author$project$Page$Post$view = function (model) {
+	var _v0 = model.post;
+	switch (_v0.$) {
+		case 'NotAsked':
+			var slug = $author$project$Page$Post$idToString(model.postId);
+			return A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('container')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$button,
+						_List_fromArray(
+							[
+								$elm$html$Html$Events$onClick(
+								$author$project$Page$Post$GetPost(slug))
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Load Post ' + slug)
+							]))
+					]));
+		case 'Loading':
+			return A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('container')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Loading ...')
+					]));
+		case 'Failure':
+			var error = _v0.a;
+			return A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('container')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(
+						$author$project$Error$buildErrorMessage(error))
+					]));
+		default:
+			var post = _v0.a;
+			return A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('container')
+					]),
+				_List_fromArray(
+					[
+						$author$project$Page$Post$viewPost(post)
+					]));
+	}
+};
 var $author$project$Main$pageSpecificView = function (model) {
 	var _v0 = model.page;
-	if (_v0.$ === 'NotFoundPage') {
-		return $author$project$Main$notFoundView;
-	} else {
-		var pageModel = _v0.a;
-		return A2(
-			$elm$html$Html$map,
-			$author$project$Main$HomePageMsg,
-			$author$project$Page$Home$view(pageModel));
+	switch (_v0.$) {
+		case 'NotFoundPage':
+			return $author$project$Main$notFoundView;
+		case 'HomePage':
+			var pageModel = _v0.a;
+			return A2(
+				$elm$html$Html$map,
+				$author$project$Main$HomePageMsg,
+				$author$project$Page$Home$view(pageModel));
+		default:
+			var pageModel = _v0.a;
+			return A2(
+				$elm$html$Html$map,
+				$author$project$Main$PostPageMsg,
+				$author$project$Page$Post$view(pageModel));
 	}
 };
 var $author$project$Route$toString = function (route) {
-	if (route.$ === 'NotFound') {
-		return 'Not Found';
-	} else {
-		return 'Home';
+	switch (route.$) {
+		case 'NotFound':
+			return 'Not Found';
+		case 'Home':
+			return 'Home';
+		default:
+			var slug = route.a;
+			return 'Post';
 	}
 };
 var $elm$html$Html$ul = _VirtualDom_node('ul');
@@ -7713,11 +8315,6 @@ var $author$project$GlobalFeed$buildErrorMessage = function (httpError) {
 			return message;
 	}
 };
-var $elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
-	});
 var $author$project$GlobalFeed$viewError = A2($elm$core$Basics$composeL, $elm$html$Html$text, $author$project$GlobalFeed$buildErrorMessage);
 var $elm$html$Html$li = _VirtualDom_node('li');
 var $author$project$GlobalFeed$viewLoading = A2(
@@ -7833,14 +8430,7 @@ var $author$project$GlobalFeed$view = function (model) {
 		_List_Nil,
 		_List_fromArray(
 			[
-				$elm$html$Html$text('Hello Global Feed'),
-				A2(
-				$elm$html$Html$div,
-				_List_Nil,
-				_List_fromArray(
-					[
-						$author$project$GlobalFeed$viewPostsRequest(model)
-					]))
+				$author$project$GlobalFeed$viewPostsRequest(model)
 			]));
 };
 var $author$project$Main$viewLink = F2(
@@ -7878,7 +8468,6 @@ var $elm$virtual_dom$VirtualDom$attribute = F2(
 			_VirtualDom_noJavaScriptOrHtmlUri(value));
 	});
 var $elm$html$Html$Attributes$attribute = $elm$virtual_dom$VirtualDom$attribute;
-var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
 var $author$project$Main$windowed = F2(
 	function (title, content) {
