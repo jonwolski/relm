@@ -1,6 +1,7 @@
 module Route exposing (Route(..), parseUrl, pushUrl, toString)
 
 import Browser.Navigation as Nav
+import Page.Post as Post exposing (PostId)
 import Url exposing (Url)
 import Url.Parser exposing (..)
 
@@ -8,11 +9,7 @@ import Url.Parser exposing (..)
 type Route
     = NotFound
     | Home
-
-
-
---  | Posts
---  | Post PostId
+    | Post PostId
 --  | NewPost
 --  | EditPost PostId
 
@@ -40,10 +37,9 @@ matchRoute maybeRootPathString =
     in
     oneOf
         [ map Home rootPath
-
-        --      , map Posts (rootPath </> s "posts")
-        --      , map NewPost (rootPath </> s "posts" </> s "new")
-        --      , map Post (rootPath </> s "posts" </> s "id")
+        , map Post (rootPath </> s "posts" </> Post.idParser)
+--      , map NewPost (rootPath </> s "posts" </> s "new")
+--      , map Post (rootPath </> s "posts" </> s "id")
         ]
 
 
@@ -65,3 +61,6 @@ toString route =
 
         Home ->
             "Home"
+
+        Post slug ->
+            "Post"

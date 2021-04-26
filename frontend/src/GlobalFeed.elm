@@ -7,6 +7,7 @@ import Http
 import Iso8601
 import Json.Decode as Decode exposing (Decoder, Error(..), bool, field, int, list, nullable, string)
 import Json.Decode.Pipeline exposing (required)
+import Page.Post as Post exposing (Post, postsResponseDecoder)
 import RemoteData exposing (RemoteData, WebData)
 import Time
 import Url.Builder exposing (absolute)
@@ -14,62 +15,6 @@ import Url.Builder exposing (absolute)
 
 type alias RootPath =
     Maybe String
-
-
-type alias Author =
-    { username : String
-    , bio : Maybe String
-    , image : String
-    , following : Bool
-    }
-
-
-type alias Post =
-    { title : String
-    , slug : String
-    , body : String
-    , createdAt : Time.Posix
-    , updatedAt : Time.Posix
-    , tagList : List String
-    , description : String
-    , author : Author
-    , favorited : Bool
-    , favoritesCount : Int
-    }
-
-
-type alias PostsResponse =
-    { articles : List Post
-    }
-
-
-postsResponseDecoder : Decoder (List Post)
-postsResponseDecoder =
-    field "articles" (list postDecoder)
-
-
-postDecoder : Decoder Post
-postDecoder =
-    Decode.succeed Post
-        |> required "title" string
-        |> required "slug" string
-        |> required "body" string
-        |> required "createdAt" Iso8601.decoder
-        |> required "updatedAt" Iso8601.decoder
-        |> required "tagList" (list string)
-        |> required "description" string
-        |> required "author" authorDecoder
-        |> required "favorited" bool
-        |> required "favoritesCount" int
-
-
-authorDecoder : Decoder Author
-authorDecoder =
-    Decode.succeed Author
-        |> required "username" string
-        |> required "bio" (nullable string)
-        |> required "image" string
-        |> required "following" bool
 
 
 type alias Model =
@@ -120,9 +65,7 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ text "Hello Global Feed"
-        , div [] [ viewPostsRequest model ]
-        ]
+        [ viewPostsRequest model ]
 
 
 viewPostsRequest : Model -> Html Msg

@@ -6,6 +6,7 @@ import GlobalFeed
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Page.Home as Home
+import Page.Post as Post
 import Route exposing (Route)
 import Url
 import Url.Builder exposing (absolute)
@@ -43,10 +44,7 @@ type alias Model =
 type Page
     = NotFoundPage
     | HomePage Home.Model
-
-
-
---  | PostsPage
+    | PostPage Post.Model
 
 
 init : Maybe String -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -83,6 +81,13 @@ initCurrentPage ( model, existingCmds ) =
                             Home.init model.key
                     in
                     ( HomePage pageModel, Cmd.map HomePageMsg pageCmd )
+
+                Route.Post postId ->
+                    let
+                        ( pageModel, pageCmd ) =
+                            Post.init postId model.key
+                    in
+                    ( PostPage pageModel, Cmd.map PostPageMsg pageCmd )
     in
     ( { model | page = currentPage }
     , Cmd.batch [ existingCmds, wrappedPageCmds ]
@@ -97,6 +102,7 @@ type Msg
     = LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
     | HomePageMsg Home.Msg
+    | PostPageMsg Post.Msg
     | GlobalFeedMsg GlobalFeed.Msg
 
 
@@ -131,6 +137,15 @@ update msg model =
             in
             ( { model | page = HomePage updatedPageModel }
             , Cmd.map HomePageMsg updatedCmd
+            )
+
+        ( PostPageMsg subMsg, PostPage pageModel ) ->
+            let
+                ( updatedPageModel, updatedCmd ) =
+                    Post.update subMsg pageModel
+            in
+            ( { model | page = PostPage updatedPageModel }
+            , Cmd.map PostPageMsg updatedCmd
             )
 
         ( _, _ ) ->
@@ -179,6 +194,9 @@ pageSpecificView model =
 
         HomePage pageModel ->
             Home.view pageModel |> Html.map HomePageMsg
+
+        PostPage pageModel ->
+            Post.view pageModel |> Html.map PostPageMsg
 
 
 notFoundView : Html Msg
