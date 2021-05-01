@@ -1,0 +1,13 @@
+{
+  "name": "relm",
+  "version": "1.0.0",
+  "main": "spa-server.js",
+  "license": "MIT",
+  "dependencies": {
+    "spa-server": "^1.0.0"
+  },
+  "scripts": {
+    "spa-server": "node spa-server.js"
+  }
+
+}
