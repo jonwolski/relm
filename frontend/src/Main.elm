@@ -7,6 +7,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Page.Home as Home
 import Page.Post as Post
+import Page.SignIn as SignIn
 import Route exposing (Route)
 import Url
 import Url.Builder exposing (absolute)
@@ -45,6 +46,7 @@ type Page
     = NotFoundPage
     | HomePage Home.Model
     | PostPage Post.Model
+    | SignInPage SignIn.Model
 
 
 init : Maybe String -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -88,6 +90,13 @@ initCurrentPage ( model, existingCmds ) =
                             Post.init postId model.key
                     in
                     ( PostPage pageModel, Cmd.map PostPageMsg pageCmd )
+
+                Route.SignIn ->
+                    let
+                        ( pageModel, pageCmd ) =
+                            SignIn.init model.key
+                    in
+                    ( SignInPage pageModel, Cmd.map SignInPageMsg pageCmd )
     in
     ( { model | page = currentPage }
     , Cmd.batch [ existingCmds, wrappedPageCmds ]
@@ -103,6 +112,7 @@ type Msg
     | UrlChanged Url.Url
     | HomePageMsg Home.Msg
     | PostPageMsg Post.Msg
+    | SignInPageMsg SignIn.Msg
     | GlobalFeedMsg GlobalFeed.Msg
 
 
@@ -148,6 +158,15 @@ update msg model =
             , Cmd.map PostPageMsg updatedCmd
             )
 
+        ( SignInPageMsg subMsg, SignInPage pageModel ) ->
+            let
+                ( updatedPageModel, updatedCmd ) =
+                    SignIn.update subMsg pageModel
+            in
+            ( { model | page = SignInPage updatedPageModel }
+            , Cmd.map SignInPageMsg updatedCmd
+            )
+
         ( _, _ ) ->
             ( model, Cmd.none )
 
@@ -174,16 +193,21 @@ view model =
     { title = "Relm : " ++ routeName
     , body =
         [ windowed (Route.toString model.route)
-            [ text <| "The current route is: " ++ routeName
-            , ul [ class "tree-view" ]
-                [ viewLink model.rootPath "/"
-                , viewLink model.rootPath "/bad-link"
-                ]
+            [ menuBar model
             , pageSpecificView model
             , Html.map GlobalFeedMsg (GlobalFeed.view model.globalFeed)
             ]
         ]
     }
+
+
+menuBar : Model -> Html Msg
+menuBar model =
+    ul [ class "menuBar" ]
+        [ viewLink model.rootPath "/" "Home"
+        , viewLink model.rootPath "/login" "Sign in"
+        , viewLink model.rootPath "/register" "Sign up"
+        ]
 
 
 pageSpecificView : Model -> Html Msg
@@ -198,14 +222,17 @@ pageSpecificView model =
         PostPage pageModel ->
             Post.view pageModel |> Html.map PostPageMsg
 
+        SignInPage pageModel ->
+            SignIn.view pageModel |> Html.map SignInPageMsg
+
 
 notFoundView : Html Msg
 notFoundView =
     h3 [] [ text "The page you requested was not found!" ]
 
 
-viewLink : Maybe String -> String -> Html msg
-viewLink rootPath path =
+viewLink : Maybe String -> String -> String -> Html msg
+viewLink rootPath path text_ =
     let
         url =
             case rootPath of
@@ -215,7 +242,7 @@ viewLink rootPath path =
                 Nothing ->
                     path
     in
-    li [] [ a [ href url ] [ text path ] ]
+    li [] [ a [ href url ] [ text text_ ] ]
 
 
 windowed : String -> List (Html msg) -> Html msg

@@ -4,6 +4,7 @@ module Page.Post exposing
     , Post
     , PostId
     , idParser
+    , idToString
     , init
     , postsResponseDecoder
     , update

@@ -10,6 +10,7 @@ type Route
     = NotFound
     | Home
     | Post PostId
+    | SignIn
 --  | NewPost
 --  | EditPost PostId
 
@@ -38,6 +39,7 @@ matchRoute maybeRootPathString =
     oneOf
         [ map Home rootPath
         , map Post (rootPath </> s "posts" </> Post.idParser)
+        , map SignIn (rootPath </> s "login")
 --      , map NewPost (rootPath </> s "posts" </> s "new")
 --      , map Post (rootPath </> s "posts" </> s "id")
         ]
@@ -64,3 +66,7 @@ toString route =
 
         Post slug ->
             "Post"
+
+        SignIn ->
+            "Sign in"
+
