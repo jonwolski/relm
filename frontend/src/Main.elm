@@ -11,6 +11,7 @@ import Page.SignIn as SignIn
 import Route exposing (Route)
 import Url
 import Url.Builder exposing (absolute)
+import User exposing (User)
 
 
 
@@ -39,6 +40,7 @@ type alias Model =
     , route : Route
     , globalFeed : GlobalFeed.Model
     , rootPath : Maybe String
+    , user : Maybe User
     }
 
 
@@ -64,6 +66,7 @@ init rootPath url key =
             , route = Route.parseUrl rootPath url
             , rootPath = rootPath
             , globalFeed = globalFeed
+            , user = Nothing
             }
     in
     initCurrentPage ( model, wrappedFeedCmd )
@@ -162,8 +165,11 @@ update msg model =
             let
                 ( updatedPageModel, updatedCmd ) =
                     SignIn.update subMsg pageModel
+
+                user =
+                    or model.user updatedPageModel.user
             in
-            ( { model | page = SignInPage updatedPageModel }
+            ( { model | page = SignInPage updatedPageModel, user = user }
             , Cmd.map SignInPageMsg updatedCmd
             )
 
@@ -203,11 +209,26 @@ view model =
 
 menuBar : Model -> Html Msg
 menuBar model =
+    let
+        maybeSignedInHtml =
+            Maybe.map (displayUser model) model.user
+
+        defaultHtml =
+            [ viewLink model.rootPath "/login" "Sign in"
+            , viewLink model.rootPath "/register" "Sign up"
+            ]
+    in
     ul [ class "menuBar" ]
-        [ viewLink model.rootPath "/" "Home"
-        , viewLink model.rootPath "/login" "Sign in"
-        , viewLink model.rootPath "/register" "Sign up"
-        ]
+        ([ viewLink model.rootPath "/" "Home" ]
+            ++ Maybe.withDefault defaultHtml maybeSignedInHtml
+        )
+
+
+displayUser : Model -> User -> List (Html Msg)
+displayUser model user =
+    [ text user.username
+    , viewLink model.rootPath "/logout" "Sign Out"
+    ]
 
 
 pageSpecificView : Model -> Html Msg
@@ -260,3 +281,13 @@ windowed title content =
         , div [ class "window-body", id "elm" ]
             content
         ]
+
+
+or : Maybe a -> Maybe a -> Maybe a
+or first second =
+    case first of
+        Just _ ->
+            first
+
+        _ ->
+            second

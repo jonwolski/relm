@@ -12089,7 +12089,7 @@ var $author$project$Page$Post$init = F2(
 var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
 var $author$project$Page$SignIn$init = function (navKey) {
 	return _Utils_Tuple2(
-		{navKey: navKey, password: '', saveError: $elm$core$Maybe$Nothing, signInResponse: $krisajenkins$remotedata$RemoteData$NotAsked, username: ''},
+		{navKey: navKey, password: '', saveError: $elm$core$Maybe$Nothing, signInResponse: $krisajenkins$remotedata$RemoteData$NotAsked, user: $elm$core$Maybe$Nothing, username: ''},
 		$elm$core$Platform$Cmd$none);
 };
 var $author$project$Main$initCurrentPage = function (_v0) {
@@ -12446,7 +12446,8 @@ var $author$project$Main$init = F3(
 			key: key,
 			page: $author$project$Main$NotFoundPage,
 			rootPath: rootPath,
-			route: A2($author$project$Route$parseUrl, rootPath, url)
+			route: A2($author$project$Route$parseUrl, rootPath, url),
+			user: $elm$core$Maybe$Nothing
 		};
 		return $author$project$Main$initCurrentPage(
 			_Utils_Tuple2(model, wrappedFeedCmd));
@@ -12457,6 +12458,14 @@ var $author$project$Main$subscriptions = function (_v0) {
 	return $elm$core$Platform$Sub$none;
 };
 var $elm$browser$Browser$Navigation$load = _Browser_load;
+var $author$project$Main$or = F2(
+	function (first, second) {
+		if (first.$ === 'Just') {
+			return first;
+		} else {
+			return second;
+		}
+	});
 var $elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
 var $elm$url$Url$addPort = F2(
 	function (maybePort, starter) {
@@ -12619,11 +12628,11 @@ var $author$project$Page$SignIn$signInRequestEncoder = function (model) {
 var $author$project$Page$SignIn$SignInResponse = function (user) {
 	return {user: user};
 };
-var $author$project$Page$SignIn$User = F5(
+var $author$project$User$User = F5(
 	function (email, username, bio, image, token) {
 		return {bio: bio, email: email, image: image, token: token, username: username};
 	});
-var $author$project$Page$SignIn$userDecoder = A3(
+var $author$project$User$decoder = A3(
 	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 	'token',
 	$elm$json$Json$Decode$string,
@@ -12643,11 +12652,11 @@ var $author$project$Page$SignIn$userDecoder = A3(
 					$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 					'email',
 					$elm$json$Json$Decode$string,
-					$elm$json$Json$Decode$succeed($author$project$Page$SignIn$User))))));
+					$elm$json$Json$Decode$succeed($author$project$User$User))))));
 var $author$project$Page$SignIn$signInResponseDecoder = A3(
 	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 	'user',
-	$author$project$Page$SignIn$userDecoder,
+	$author$project$User$decoder,
 	$elm$json$Json$Decode$succeed($author$project$Page$SignIn$SignInResponse));
 var $author$project$Page$SignIn$signIn = function (model) {
 	return $elm$http$Http$post(
@@ -12662,14 +12671,14 @@ var $krisajenkins$remotedata$RemoteData$succeed = $krisajenkins$remotedata$Remot
 var $author$project$Page$SignIn$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
-			case 'StoreUsername':
+			case 'SetUsername':
 				var username = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{username: username}),
 					$elm$core$Platform$Cmd$none);
-			case 'StorePassword':
+			case 'SetPassword':
 				var password = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
@@ -12682,12 +12691,16 @@ var $author$project$Page$SignIn$update = F2(
 					$author$project$Page$SignIn$signIn(model));
 			default:
 				if (msg.a.$ === 'Ok') {
-					var postData = msg.a.a;
-					var signInResponse = $krisajenkins$remotedata$RemoteData$succeed(postData);
+					var signInResponse = msg.a.a;
+					var wrappedSignInResponse = $krisajenkins$remotedata$RemoteData$succeed(signInResponse);
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{saveError: $elm$core$Maybe$Nothing, signInResponse: signInResponse}),
+							{
+								saveError: $elm$core$Maybe$Nothing,
+								signInResponse: wrappedSignInResponse,
+								user: $elm$core$Maybe$Just(signInResponse.user)
+							}),
 						A2($author$project$Route$pushUrl, $author$project$Route$Home, model.navKey));
 				} else {
 					var error = msg.a.a;
@@ -12696,7 +12709,8 @@ var $author$project$Page$SignIn$update = F2(
 							model,
 							{
 								saveError: $elm$core$Maybe$Just(
-									$author$project$Page$SignIn$buildErrorMessage(error))
+									$author$project$Page$SignIn$buildErrorMessage(error)),
+								user: $elm$core$Maybe$Nothing
 							}),
 						$elm$core$Platform$Cmd$none);
 				}
@@ -12784,11 +12798,13 @@ var $author$project$Main$update = F2(
 						var _v4 = A2($author$project$Page$SignIn$update, subMsg, pageModel);
 						var updatedPageModel = _v4.a;
 						var updatedCmd = _v4.b;
+						var user = A2($author$project$Main$or, model.user, updatedPageModel.user);
 						return _Utils_Tuple2(
 							_Utils_update(
 								model,
 								{
-									page: $author$project$Main$SignInPage(updatedPageModel)
+									page: $author$project$Main$SignInPage(updatedPageModel),
+									user: user
 								}),
 							A2($elm$core$Platform$Cmd$map, $author$project$Main$SignInPageMsg, updatedCmd));
 					} else {
@@ -12825,19 +12841,46 @@ var $author$project$Main$viewLink = F3(
 						]))
 				]));
 	});
+var $author$project$Main$displayUser = F2(
+	function (model, user) {
+		return _List_fromArray(
+			[
+				$elm$html$Html$text(user.username),
+				A3($author$project$Main$viewLink, model.rootPath, '/logout', 'Sign Out')
+			]);
+	});
+var $elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return $elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
 var $author$project$Main$menuBar = function (model) {
+	var maybeSignedInHtml = A2(
+		$elm$core$Maybe$map,
+		$author$project$Main$displayUser(model),
+		model.user);
+	var defaultHtml = _List_fromArray(
+		[
+			A3($author$project$Main$viewLink, model.rootPath, '/login', 'Sign in'),
+			A3($author$project$Main$viewLink, model.rootPath, '/register', 'Sign up')
+		]);
 	return A2(
 		$elm$html$Html$ul,
 		_List_fromArray(
 			[
 				$elm$html$Html$Attributes$class('menuBar')
 			]),
-		_List_fromArray(
-			[
-				A3($author$project$Main$viewLink, model.rootPath, '/', 'Home'),
-				A3($author$project$Main$viewLink, model.rootPath, '/login', 'Sign in'),
-				A3($author$project$Main$viewLink, model.rootPath, '/register', 'Sign up')
-			]));
+		_Utils_ap(
+			_List_fromArray(
+				[
+					A3($author$project$Main$viewLink, model.rootPath, '/', 'Home')
+				]),
+			A2($elm$core$Maybe$withDefault, defaultHtml, maybeSignedInHtml)));
 };
 var $elm$html$Html$h3 = _VirtualDom_node('h3');
 var $author$project$Main$notFoundView = A2(
@@ -13257,13 +13300,13 @@ var $author$project$Page$SignIn$viewErrorMessage = function (error) {
 				]));
 	}
 };
+var $author$project$Page$SignIn$SetPassword = function (a) {
+	return {$: 'SetPassword', a: a};
+};
+var $author$project$Page$SignIn$SetUsername = function (a) {
+	return {$: 'SetUsername', a: a};
+};
 var $author$project$Page$SignIn$SignIn = {$: 'SignIn'};
-var $author$project$Page$SignIn$StorePassword = function (a) {
-	return {$: 'StorePassword', a: a};
-};
-var $author$project$Page$SignIn$StoreUsername = function (a) {
-	return {$: 'StoreUsername', a: a};
-};
 var $elm$html$Html$fieldset = _VirtualDom_node('fieldset');
 var $elm$html$Html$form = _VirtualDom_node('form');
 var $elm$html$Html$label = _VirtualDom_node('label');
@@ -13322,7 +13365,7 @@ var $author$project$Page$SignIn$viewForm = function (model) {
 								_List_fromArray(
 									[
 										$elm$html$Html$Attributes$type_('text'),
-										$elm$html$Html$Events$onInput($author$project$Page$SignIn$StoreUsername)
+										$elm$html$Html$Events$onInput($author$project$Page$SignIn$SetUsername)
 									]),
 								_List_Nil)
 							])),
@@ -13337,7 +13380,7 @@ var $author$project$Page$SignIn$viewForm = function (model) {
 								_List_fromArray(
 									[
 										$elm$html$Html$Attributes$type_('password'),
-										$elm$html$Html$Events$onInput($author$project$Page$SignIn$StorePassword)
+										$elm$html$Html$Events$onInput($author$project$Page$SignIn$SetPassword)
 									]),
 								_List_Nil)
 							]))
@@ -13616,4 +13659,4 @@ _Platform_export({'Main':{'init':$author$project$Main$main(
 			[
 				$elm$json$Json$Decode$null($elm$core$Maybe$Nothing),
 				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $elm$json$Json$Decode$string)
-			])))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Page.Post.Author":{"args":[],"type":"{ username : String.String, bio : Maybe.Maybe String.String, image : String.String, following : Basics.Bool }"},"Page.Post.Post":{"args":[],"type":"{ title : String.String, slug : String.String, body : String.String, createdAt : Time.Posix, updatedAt : Time.Posix, tagList : List.List String.String, description : String.String, author : Page.Post.Author, favorited : Basics.Bool, favoritesCount : Basics.Int }"},"Page.SignIn.SignInResponse":{"args":[],"type":"{ user : Page.SignIn.User }"},"Page.SignIn.User":{"args":[],"type":"{ email : String.String, username : String.String, bio : Maybe.Maybe String.String, image : Maybe.Maybe String.String, token : String.String }"},"RemoteData.WebData":{"args":["a"],"type":"RemoteData.RemoteData Http.Error a"}},"unions":{"Main.Msg":{"args":[],"tags":{"LinkClicked":["Browser.UrlRequest"],"UrlChanged":["Url.Url"],"HomePageMsg":["Page.Home.Msg"],"PostPageMsg":["Page.Post.Msg"],"SignInPageMsg":["Page.SignIn.Msg"],"GlobalFeedMsg":["GlobalFeed.Msg"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"GlobalFeed.Msg":{"args":[],"tags":{"GetPosts":[],"DataReceived":["RemoteData.WebData (List.List Page.Post.Post)"]}},"Page.Home.Msg":{"args":[],"tags":{"Default":[]}},"Page.Post.Msg":{"args":[],"tags":{"GetPost":["String.String"],"PostReceived":["RemoteData.WebData Page.Post.Post"]}},"Page.SignIn.Msg":{"args":[],"tags":{"SignIn":[],"StoreUsername":["String.String"],"StorePassword":["String.String"],"SignInResponded":["Result.Result Http.Error Page.SignIn.SignInResponse"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"List.List":{"args":["a"],"tags":{}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"RemoteData.RemoteData":{"args":["e","a"],"tags":{"NotAsked":[],"Loading":[],"Failure":["e"],"Success":["a"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}}}}})}});}(this));
+			])))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Page.Post.Author":{"args":[],"type":"{ username : String.String, bio : Maybe.Maybe String.String, image : String.String, following : Basics.Bool }"},"Page.Post.Post":{"args":[],"type":"{ title : String.String, slug : String.String, body : String.String, createdAt : Time.Posix, updatedAt : Time.Posix, tagList : List.List String.String, description : String.String, author : Page.Post.Author, favorited : Basics.Bool, favoritesCount : Basics.Int }"},"Page.SignIn.SignInResponse":{"args":[],"type":"{ user : Page.SignIn.User }"},"Page.SignIn.User":{"args":[],"type":"{ email : String.String, username : String.String, bio : Maybe.Maybe String.String, image : Maybe.Maybe String.String, token : String.String }"},"RemoteData.WebData":{"args":["a"],"type":"RemoteData.RemoteData Http.Error a"}},"unions":{"Main.Msg":{"args":[],"tags":{"LinkClicked":["Browser.UrlRequest"],"UrlChanged":["Url.Url"],"HomePageMsg":["Page.Home.Msg"],"PostPageMsg":["Page.Post.Msg"],"SignInPageMsg":["Page.SignIn.Msg"],"GlobalFeedMsg":["GlobalFeed.Msg"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"GlobalFeed.Msg":{"args":[],"tags":{"GetPosts":[],"DataReceived":["RemoteData.WebData (List.List Page.Post.Post)"]}},"Page.Home.Msg":{"args":[],"tags":{"Default":[]}},"Page.Post.Msg":{"args":[],"tags":{"GetPost":["String.String"],"PostReceived":["RemoteData.WebData Page.Post.Post"]}},"Page.SignIn.Msg":{"args":[],"tags":{"SignIn":[],"SetUsername":["String.String"],"SetPassword":["String.String"],"SignInResponded":["Result.Result Http.Error Page.SignIn.SignInResponse"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"List.List":{"args":["a"],"tags":{}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"RemoteData.RemoteData":{"args":["e","a"],"tags":{"NotAsked":[],"Loading":[],"Failure":["e"],"Success":["a"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}}}}})}});}(this));

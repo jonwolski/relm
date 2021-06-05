@@ -10,7 +10,7 @@ import Browser
 import Browser.Navigation as Nav
 import Error
 import Html exposing (..)
-import Html.Attributes exposing (class, datetime, property, placeholder, type_, classList)
+import Html.Attributes exposing (class, classList, datetime, placeholder, property, type_)
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Http
 import Iso8601 exposing (fromTime)
@@ -23,76 +23,75 @@ import Time
 import Url
 import Url.Builder exposing (absolute)
 import Url.Parser exposing (Parser, custom)
+import User exposing (User)
 
 
 type Msg
     = SignIn
-    | StoreUsername String
-    | StorePassword String
+    | SetUsername String
+    | SetPassword String
     | SignInResponded (Result Http.Error SignInResponse)
 
 
 type alias Model =
-    { navKey: Nav.Key
-    , username: String
-    , password: String
-    , signInResponse: WebData SignInResponse
+    { navKey : Nav.Key
+    , username : String
+    , password : String
+    , signInResponse : WebData SignInResponse
     , saveError : Maybe String
+    , user : Maybe User
     }
+
 
 type alias SignInResponse =
-    { user: User
+    { user : User
     }
 
+
 type alias User =
-    { email: String
-    , username: String
-    , bio: Maybe String
-    , image: Maybe String
-    , token: String
+    { email : String
+    , username : String
+    , bio : Maybe String
+    , image : Maybe String
+    , token : String
     }
+
 
 signInResponseDecoder : Decoder SignInResponse
 signInResponseDecoder =
     Decode.succeed SignInResponse
-        |> required "user" userDecoder
+        |> required "user" User.decoder
+
 
 signInRequestEncoder : Model -> Encode.Value
 signInRequestEncoder model =
     Encode.object
-        [ ("user", Encode.object
-            [ ( "email", Encode.string model.username)
-            , ( "password", Encode.string model.password )
-            ]
-        )]
-
-
-userDecoder : Decoder User
-userDecoder =
-    Decode.succeed User
-        |> required "email" string
-        |> required "username" string
-        |> required "bio" (nullable string)
-        |> required "image" (nullable string)
-        |> required "token" string
-
+        [ ( "user"
+          , Encode.object
+                [ ( "email", Encode.string model.username )
+                , ( "password", Encode.string model.password )
+                ]
+          )
+        ]
 
 
 init : Nav.Key -> ( Model, Cmd Msg )
 init navKey =
-    (
-        { navKey = navKey
-          {-- Maybe/Nothing would seem to be useful, but we will have to handle
+    ( { navKey = navKey
+
+      {--Maybe/Nothing would seem to be useful, but we will have to handle
               the case of an empty string anyway. We might as well init to ""
               and avoid the complexity of unwrapping Maybes.
           --}
-        , username = ""
-        , password = ""
-        , signInResponse = RemoteData.NotAsked
-        , saveError = Nothing
-        }
+      , username = ""
+      , password = ""
+      , signInResponse = RemoteData.NotAsked
+      , saveError = Nothing
+      , user = Nothing
+      }
     , Cmd.none
     )
+
 
 
 -- VIEW
@@ -109,27 +108,30 @@ view model =
 viewErrorMessage : Maybe String -> Html Msg
 viewErrorMessage error =
     case error of
-        Nothing -> text ""
-        Just errorMsg -> p [class "error"][text errorMsg]
+        Nothing ->
+            text ""
 
+        Just errorMsg ->
+            p [ class "error" ] [ text errorMsg ]
 
 
 viewForm : Model -> Html Msg
 viewForm model =
-    form [onSubmit SignIn]
+    form [ onSubmit SignIn ]
         [ fieldset []
             [ legend [] [ text "Sign in form" ]
             , label []
                 [ text "User name"
-                , input [ type_ "text", onInput StoreUsername ] []
+                , input [ type_ "text", onInput SetUsername ] []
                 ]
             , label []
                 [ text "Password"
-                , input [ type_ "password", onInput StorePassword ] []
+                , input [ type_ "password", onInput SetPassword ] []
                 ]
             ]
-        , button [type_ "submit"] [text "Sign in"]
+        , button [ type_ "submit" ] [ text "Sign in" ]
         ]
+
 
 
 {--
@@ -185,30 +187,39 @@ classes = String.split " " >> List.map class
 </div>
 
 --}
-
-
 -- UPDATE
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        StoreUsername username -> ({ model | username = username }, Cmd.none )
+        SetUsername username ->
+            ( { model | username = username }, Cmd.none )
 
-        StorePassword password -> ({ model | password = password }, Cmd.none )
+        SetPassword password ->
+            ( { model | password = password }, Cmd.none )
 
-        SignIn -> ( model, signIn model )
+        SignIn ->
+            ( model, signIn model )
 
-        SignInResponded (Ok postData) ->
+        SignInResponded (Ok signInResponse) ->
             let
-                signInResponse = RemoteData.succeed postData
+                wrappedSignInResponse =
+                    RemoteData.succeed signInResponse
             in
-            ( { model | signInResponse = signInResponse, saveError = Nothing }
+            ( { model
+                | signInResponse = wrappedSignInResponse
+                , saveError = Nothing
+                , user = Just signInResponse.user
+              }
             , Route.pushUrl Route.Home model.navKey
             )
 
         SignInResponded (Err error) ->
-            ( { model | saveError = Just <| buildErrorMessage error }
+            ( { model
+                | saveError = Just <| buildErrorMessage error
+                , user = Nothing
+              }
             , Cmd.none
             )
 
@@ -222,12 +233,16 @@ signIn model =
         }
 
 
-{-- Override the generic error handling, because the API will respond 422 on failed log-in
+
+{--Override the generic error handling, because the API will respond 422 on failed log-in
 --}
+
+
 buildErrorMessage : Http.Error -> String
 buildErrorMessage httpError =
     case httpError of
         Http.BadStatus 422 ->
             "E-mail or password is invalid"
 
-        _ -> Error.buildErrorMessage httpError
+        _ ->
+            Error.buildErrorMessage httpError
