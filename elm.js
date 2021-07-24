@@ -7243,6 +7243,12 @@ var $author$project$Main$PostPage = function (a) {
 var $author$project$Main$PostPageMsg = function (a) {
 	return {$: 'PostPageMsg', a: a};
 };
+var $author$project$Main$SignInPage = function (a) {
+	return {$: 'SignInPage', a: a};
+};
+var $author$project$Main$SignInPageMsg = function (a) {
+	return {$: 'SignInPageMsg', a: a};
+};
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$Page$Home$init = function (navKey) {
@@ -7279,6 +7285,12 @@ var $author$project$Page$Post$init = F2(
 			A2($author$project$Page$Post$initialModel, postId, navKey),
 			$author$project$Page$Post$getPost(slug));
 	});
+var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
+var $author$project$Page$SignIn$init = function (navKey) {
+	return _Utils_Tuple2(
+		{navKey: navKey, password: '', saveError: $elm$core$Maybe$Nothing, signInResponse: $krisajenkins$remotedata$RemoteData$NotAsked, user: $elm$core$Maybe$Nothing, username: ''},
+		$elm$core$Platform$Cmd$none);
+};
 var $elm$core$Platform$Cmd$map = _Platform_map;
 var $author$project$Main$initCurrentPage = function (_v0) {
 	var model = _v0.a;
@@ -7295,7 +7307,7 @@ var $author$project$Main$initCurrentPage = function (_v0) {
 				return _Utils_Tuple2(
 					$author$project$Main$HomePage(pageModel),
 					A2($elm$core$Platform$Cmd$map, $author$project$Main$HomePageMsg, pageCmd));
-			default:
+			case 'Post':
 				var postId = _v2.a;
 				var _v4 = A2($author$project$Page$Post$init, postId, model.key);
 				var pageModel = _v4.a;
@@ -7303,6 +7315,13 @@ var $author$project$Main$initCurrentPage = function (_v0) {
 				return _Utils_Tuple2(
 					$author$project$Main$PostPage(pageModel),
 					A2($elm$core$Platform$Cmd$map, $author$project$Main$PostPageMsg, pageCmd));
+			default:
+				var _v5 = $author$project$Page$SignIn$init(model.key);
+				var pageModel = _v5.a;
+				var pageCmd = _v5.b;
+				return _Utils_Tuple2(
+					$author$project$Main$SignInPage(pageModel),
+					A2($elm$core$Platform$Cmd$map, $author$project$Main$SignInPageMsg, pageCmd));
 		}
 	}();
 	var currentPage = _v1.a;
@@ -7320,6 +7339,7 @@ var $author$project$Route$Home = {$: 'Home'};
 var $author$project$Route$Post = function (a) {
 	return {$: 'Post', a: a};
 };
+var $author$project$Route$SignIn = {$: 'SignIn'};
 var $author$project$Page$Post$PostId = function (a) {
 	return {$: 'PostId', a: a};
 };
@@ -7498,7 +7518,14 @@ var $author$project$Route$matchRoute = function (maybeRootPathString) {
 					A2(
 						$elm$url$Url$Parser$slash,
 						$elm$url$Url$Parser$s('posts'),
-						$author$project$Page$Post$idParser)))
+						$author$project$Page$Post$idParser))),
+				A2(
+				$elm$url$Url$Parser$map,
+				$author$project$Route$SignIn,
+				A2(
+					$elm$url$Url$Parser$slash,
+					rootPath,
+					$elm$url$Url$Parser$s('login')))
 			]));
 };
 var $elm$url$Url$Parser$getFirstMatch = function (states) {
@@ -7640,7 +7667,8 @@ var $author$project$Main$init = F3(
 			key: key,
 			page: $author$project$Main$NotFoundPage,
 			rootPath: rootPath,
-			route: A2($author$project$Route$parseUrl, rootPath, url)
+			route: A2($author$project$Route$parseUrl, rootPath, url),
+			user: $elm$core$Maybe$Nothing
 		};
 		return $author$project$Main$initCurrentPage(
 			_Utils_Tuple2(model, wrappedFeedCmd));
@@ -7651,6 +7679,14 @@ var $author$project$Main$subscriptions = function (_v0) {
 	return $elm$core$Platform$Sub$none;
 };
 var $elm$browser$Browser$Navigation$load = _Browser_load;
+var $author$project$Main$or = F2(
+	function (first, second) {
+		if (first.$ === 'Just') {
+			return first;
+		} else {
+			return second;
+		}
+	});
 var $elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
 var $elm$url$Url$addPort = F2(
 	function (maybePort, starter) {
@@ -7735,10 +7771,190 @@ var $author$project$Page$Post$update = F2(
 				$elm$core$Platform$Cmd$none);
 		}
 	});
+var $author$project$Error$buildErrorMessage = function (httpError) {
+	switch (httpError.$) {
+		case 'BadUrl':
+			var message = httpError.a;
+			return message;
+		case 'Timeout':
+			return 'Server is taking too long to respond. Please try again later.';
+		case 'NetworkError':
+			return 'Unable to reach server.';
+		case 'BadStatus':
+			var statusCode = httpError.a;
+			return 'Request failed with status code: ' + $elm$core$String$fromInt(statusCode);
+		default:
+			var message = httpError.a;
+			return message;
+	}
+};
+var $author$project$Page$SignIn$buildErrorMessage = function (httpError) {
+	if ((httpError.$ === 'BadStatus') && (httpError.a === 422)) {
+		return 'E-mail or password is invalid';
+	} else {
+		return $author$project$Error$buildErrorMessage(httpError);
+	}
+};
+var $author$project$Route$toString = function (route) {
+	switch (route.$) {
+		case 'NotFound':
+			return 'Not Found';
+		case 'Home':
+			return 'Home';
+		case 'Post':
+			var slug = route.a;
+			return 'Post';
+		default:
+			return 'Sign in';
+	}
+};
+var $author$project$Route$pushUrl = F2(
+	function (route, navKey) {
+		return A2(
+			$elm$browser$Browser$Navigation$pushUrl,
+			navKey,
+			$author$project$Route$toString(route));
+	});
+var $author$project$Page$SignIn$SignInResponded = function (a) {
+	return {$: 'SignInResponded', a: a};
+};
+var $elm$http$Http$jsonBody = function (value) {
+	return A2(
+		_Http_pair,
+		'application/json',
+		A2($elm$json$Json$Encode$encode, 0, value));
+};
+var $elm$http$Http$post = function (r) {
+	return $elm$http$Http$request(
+		{body: r.body, expect: r.expect, headers: _List_Nil, method: 'POST', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
+};
+var $elm$json$Json$Encode$object = function (pairs) {
+	return _Json_wrap(
+		A3(
+			$elm$core$List$foldl,
+			F2(
+				function (_v0, obj) {
+					var k = _v0.a;
+					var v = _v0.b;
+					return A3(_Json_addField, k, v, obj);
+				}),
+			_Json_emptyObject(_Utils_Tuple0),
+			pairs));
+};
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $author$project$Page$SignIn$signInRequestEncoder = function (model) {
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'user',
+				$elm$json$Json$Encode$object(
+					_List_fromArray(
+						[
+							_Utils_Tuple2(
+							'email',
+							$elm$json$Json$Encode$string(model.username)),
+							_Utils_Tuple2(
+							'password',
+							$elm$json$Json$Encode$string(model.password))
+						])))
+			]));
+};
+var $author$project$Page$SignIn$SignInResponse = function (user) {
+	return {user: user};
+};
+var $author$project$User$User = F5(
+	function (email, username, bio, image, token) {
+		return {bio: bio, email: email, image: image, token: token, username: username};
+	});
+var $author$project$User$decoder = A3(
+	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+	'token',
+	$elm$json$Json$Decode$string,
+	A3(
+		$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+		'image',
+		$elm$json$Json$Decode$nullable($elm$json$Json$Decode$string),
+		A3(
+			$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+			'bio',
+			$elm$json$Json$Decode$nullable($elm$json$Json$Decode$string),
+			A3(
+				$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+				'username',
+				$elm$json$Json$Decode$string,
+				A3(
+					$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+					'email',
+					$elm$json$Json$Decode$string,
+					$elm$json$Json$Decode$succeed($author$project$User$User))))));
+var $author$project$Page$SignIn$signInResponseDecoder = A3(
+	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+	'user',
+	$author$project$User$decoder,
+	$elm$json$Json$Decode$succeed($author$project$Page$SignIn$SignInResponse));
+var $author$project$Page$SignIn$signIn = function (model) {
+	return $elm$http$Http$post(
+		{
+			body: $elm$http$Http$jsonBody(
+				$author$project$Page$SignIn$signInRequestEncoder(model)),
+			expect: A2($elm$http$Http$expectJson, $author$project$Page$SignIn$SignInResponded, $author$project$Page$SignIn$signInResponseDecoder),
+			url: 'https://conduit.productionready.io/api/users/login'
+		});
+};
+var $krisajenkins$remotedata$RemoteData$succeed = $krisajenkins$remotedata$RemoteData$Success;
+var $author$project$Page$SignIn$update = F2(
+	function (msg, model) {
+		switch (msg.$) {
+			case 'SetUsername':
+				var username = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{username: username}),
+					$elm$core$Platform$Cmd$none);
+			case 'SetPassword':
+				var password = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{password: password}),
+					$elm$core$Platform$Cmd$none);
+			case 'SignIn':
+				return _Utils_Tuple2(
+					model,
+					$author$project$Page$SignIn$signIn(model));
+			default:
+				if (msg.a.$ === 'Ok') {
+					var signInResponse = msg.a.a;
+					var wrappedSignInResponse = $krisajenkins$remotedata$RemoteData$succeed(signInResponse);
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								saveError: $elm$core$Maybe$Nothing,
+								signInResponse: wrappedSignInResponse,
+								user: $elm$core$Maybe$Just(signInResponse.user)
+							}),
+						A2($author$project$Route$pushUrl, $author$project$Route$Home, model.navKey));
+				} else {
+					var error = msg.a.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								saveError: $elm$core$Maybe$Just(
+									$author$project$Page$SignIn$buildErrorMessage(error)),
+								user: $elm$core$Maybe$Nothing
+							}),
+						$elm$core$Platform$Cmd$none);
+				}
+		}
+	});
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		var _v0 = _Utils_Tuple2(msg, model.page);
-		_v0$6:
+		_v0$7:
 		while (true) {
 			switch (_v0.a.$) {
 				case 'LinkClicked':
@@ -7791,9 +8007,9 @@ var $author$project$Main$update = F2(
 								}),
 							A2($elm$core$Platform$Cmd$map, $author$project$Main$HomePageMsg, updatedCmd));
 					} else {
-						break _v0$6;
+						break _v0$7;
 					}
-				default:
+				case 'PostPageMsg':
 					if (_v0.b.$ === 'PostPage') {
 						var subMsg = _v0.a.a;
 						var pageModel = _v0.b.a;
@@ -7808,13 +8024,33 @@ var $author$project$Main$update = F2(
 								}),
 							A2($elm$core$Platform$Cmd$map, $author$project$Main$PostPageMsg, updatedCmd));
 					} else {
-						break _v0$6;
+						break _v0$7;
+					}
+				default:
+					if (_v0.b.$ === 'SignInPage') {
+						var subMsg = _v0.a.a;
+						var pageModel = _v0.b.a;
+						var _v4 = A2($author$project$Page$SignIn$update, subMsg, pageModel);
+						var updatedPageModel = _v4.a;
+						var updatedCmd = _v4.b;
+						var user = A2($author$project$Main$or, model.user, updatedPageModel.user);
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									page: $author$project$Main$SignInPage(updatedPageModel),
+									user: user
+								}),
+							A2($elm$core$Platform$Cmd$map, $author$project$Main$SignInPageMsg, updatedCmd));
+					} else {
+						break _v0$7;
 					}
 			}
 		}
 		return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 	});
-var $elm$json$Json$Encode$string = _Json_wrap;
+var $elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
+var $elm$html$Html$map = $elm$virtual_dom$VirtualDom$map;
 var $elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
 		return A2(
@@ -7823,11 +8059,95 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 			$elm$json$Json$Encode$string(string));
 	});
 var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
-var $elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
-var $elm$html$Html$map = $elm$virtual_dom$VirtualDom$map;
-var $elm$html$Html$h3 = _VirtualDom_node('h3');
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $elm$html$Html$a = _VirtualDom_node('a');
+var $elm$html$Html$Attributes$href = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'href',
+		_VirtualDom_noJavaScriptUri(url));
+};
+var $elm$html$Html$li = _VirtualDom_node('li');
+var $author$project$Main$viewLink = F3(
+	function (rootPath, path, text_) {
+		var url = function () {
+			if (rootPath.$ === 'Just') {
+				var r = rootPath.a;
+				return '/' + (r + path);
+			} else {
+				return path;
+			}
+		}();
+		return A2(
+			$elm$html$Html$li,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$a,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$href(url)
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text(text_)
+						]))
+				]));
+	});
+var $author$project$Main$displayUser = F2(
+	function (model, user) {
+		return _List_fromArray(
+			[
+				$elm$html$Html$text(user.username),
+				A3($author$project$Main$viewLink, model.rootPath, '/logout', 'Sign Out')
+			]);
+	});
+var $elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return $elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $elm$html$Html$ul = _VirtualDom_node('ul');
+var $elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var $author$project$Main$menuBar = function (model) {
+	var maybeSignedInHtml = A2(
+		$elm$core$Maybe$map,
+		$author$project$Main$displayUser(model),
+		model.user);
+	var defaultHtml = _List_fromArray(
+		[
+			A3($author$project$Main$viewLink, model.rootPath, '/login', 'Sign in'),
+			A3($author$project$Main$viewLink, model.rootPath, '/register', 'Sign up')
+		]);
+	return A2(
+		$elm$html$Html$ul,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('menuBar')
+			]),
+		_Utils_ap(
+			_List_fromArray(
+				[
+					A3($author$project$Main$viewLink, model.rootPath, '/', 'Home')
+				]),
+			A2($elm$core$Maybe$withDefault, defaultHtml, maybeSignedInHtml)));
+};
+var $elm$html$Html$h3 = _VirtualDom_node('h3');
 var $author$project$Main$notFoundView = A2(
 	$elm$html$Html$h3,
 	_List_Nil,
@@ -7868,23 +8188,6 @@ var $author$project$Page$Home$view = function (model) {
 };
 var $author$project$Page$Post$GetPost = function (a) {
 	return {$: 'GetPost', a: a};
-};
-var $author$project$Error$buildErrorMessage = function (httpError) {
-	switch (httpError.$) {
-		case 'BadUrl':
-			var message = httpError.a;
-			return message;
-		case 'Timeout':
-			return 'Server is taking too long to respond. Please try again later.';
-		case 'NetworkError':
-			return 'Unable to reach server.';
-		case 'BadStatus':
-			var statusCode = httpError.a;
-			return 'Request failed with status code: ' + $elm$core$String$fromInt(statusCode);
-		default:
-			var message = httpError.a;
-			return message;
-	}
 };
 var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
@@ -8267,6 +8570,163 @@ var $author$project$Page$Post$view = function (model) {
 					]));
 	}
 };
+var $author$project$Page$SignIn$viewErrorMessage = function (error) {
+	if (error.$ === 'Nothing') {
+		return $elm$html$Html$text('');
+	} else {
+		var errorMsg = error.a;
+		return A2(
+			$elm$html$Html$p,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('error')
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text(errorMsg)
+				]));
+	}
+};
+var $author$project$Page$SignIn$SetPassword = function (a) {
+	return {$: 'SetPassword', a: a};
+};
+var $author$project$Page$SignIn$SetUsername = function (a) {
+	return {$: 'SetUsername', a: a};
+};
+var $author$project$Page$SignIn$SignIn = {$: 'SignIn'};
+var $elm$html$Html$fieldset = _VirtualDom_node('fieldset');
+var $elm$html$Html$form = _VirtualDom_node('form');
+var $elm$html$Html$input = _VirtualDom_node('input');
+var $elm$html$Html$label = _VirtualDom_node('label');
+var $elm$html$Html$legend = _VirtualDom_node('legend');
+var $elm$html$Html$Events$alwaysStop = function (x) {
+	return _Utils_Tuple2(x, true);
+};
+var $elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
+	return {$: 'MayStopPropagation', a: a};
+};
+var $elm$html$Html$Events$stopPropagationOn = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var $elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
+	});
+var $elm$html$Html$Events$targetValue = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	$elm$json$Json$Decode$string);
+var $elm$html$Html$Events$onInput = function (tagger) {
+	return A2(
+		$elm$html$Html$Events$stopPropagationOn,
+		'input',
+		A2(
+			$elm$json$Json$Decode$map,
+			$elm$html$Html$Events$alwaysStop,
+			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
+};
+var $elm$html$Html$Events$alwaysPreventDefault = function (msg) {
+	return _Utils_Tuple2(msg, true);
+};
+var $elm$virtual_dom$VirtualDom$MayPreventDefault = function (a) {
+	return {$: 'MayPreventDefault', a: a};
+};
+var $elm$html$Html$Events$preventDefaultOn = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$MayPreventDefault(decoder));
+	});
+var $elm$html$Html$Events$onSubmit = function (msg) {
+	return A2(
+		$elm$html$Html$Events$preventDefaultOn,
+		'submit',
+		A2(
+			$elm$json$Json$Decode$map,
+			$elm$html$Html$Events$alwaysPreventDefault,
+			$elm$json$Json$Decode$succeed(msg)));
+};
+var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
+var $author$project$Page$SignIn$viewForm = function (model) {
+	return A2(
+		$elm$html$Html$form,
+		_List_fromArray(
+			[
+				$elm$html$Html$Events$onSubmit($author$project$Page$SignIn$SignIn)
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$fieldset,
+				_List_Nil,
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$legend,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Sign in form')
+							])),
+						A2(
+						$elm$html$Html$label,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text('User name'),
+								A2(
+								$elm$html$Html$input,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$type_('text'),
+										$elm$html$Html$Events$onInput($author$project$Page$SignIn$SetUsername)
+									]),
+								_List_Nil)
+							])),
+						A2(
+						$elm$html$Html$label,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Password'),
+								A2(
+								$elm$html$Html$input,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$type_('password'),
+										$elm$html$Html$Events$onInput($author$project$Page$SignIn$SetPassword)
+									]),
+								_List_Nil)
+							]))
+					])),
+				A2(
+				$elm$html$Html$button,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$type_('submit')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Sign in')
+					]))
+			]));
+};
+var $author$project$Page$SignIn$view = function (model) {
+	return A2(
+		$elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				$author$project$Page$SignIn$viewErrorMessage(model.saveError),
+				$author$project$Page$SignIn$viewForm(model)
+			]));
+};
 var $author$project$Main$pageSpecificView = function (model) {
 	var _v0 = model.page;
 	switch (_v0.$) {
@@ -8278,26 +8738,20 @@ var $author$project$Main$pageSpecificView = function (model) {
 				$elm$html$Html$map,
 				$author$project$Main$HomePageMsg,
 				$author$project$Page$Home$view(pageModel));
-		default:
+		case 'PostPage':
 			var pageModel = _v0.a;
 			return A2(
 				$elm$html$Html$map,
 				$author$project$Main$PostPageMsg,
 				$author$project$Page$Post$view(pageModel));
-	}
-};
-var $author$project$Route$toString = function (route) {
-	switch (route.$) {
-		case 'NotFound':
-			return 'Not Found';
-		case 'Home':
-			return 'Home';
 		default:
-			var slug = route.a;
-			return 'Post';
+			var pageModel = _v0.a;
+			return A2(
+				$elm$html$Html$map,
+				$author$project$Main$SignInPageMsg,
+				$author$project$Page$SignIn$view(pageModel));
 	}
 };
-var $elm$html$Html$ul = _VirtualDom_node('ul');
 var $author$project$GlobalFeed$buildErrorMessage = function (httpError) {
 	switch (httpError.$) {
 		case 'BadUrl':
@@ -8316,7 +8770,6 @@ var $author$project$GlobalFeed$buildErrorMessage = function (httpError) {
 	}
 };
 var $author$project$GlobalFeed$viewError = A2($elm$core$Basics$composeL, $elm$html$Html$text, $author$project$GlobalFeed$buildErrorMessage);
-var $elm$html$Html$li = _VirtualDom_node('li');
 var $author$project$GlobalFeed$viewLoading = A2(
 	$elm$html$Html$ul,
 	_List_fromArray(
@@ -8333,13 +8786,6 @@ var $author$project$GlobalFeed$viewLoading = A2(
 					$elm$html$Html$text('Loading ...')
 				]))
 		]));
-var $elm$html$Html$a = _VirtualDom_node('a');
-var $elm$html$Html$Attributes$href = function (url) {
-	return A2(
-		$elm$html$Html$Attributes$stringProperty,
-		'href',
-		_VirtualDom_noJavaScriptUri(url));
-};
 var $elm$url$Url$Builder$toQueryPair = function (_v0) {
 	var key = _v0.a;
 	var value = _v0.b;
@@ -8433,33 +8879,6 @@ var $author$project$GlobalFeed$view = function (model) {
 				$author$project$GlobalFeed$viewPostsRequest(model)
 			]));
 };
-var $author$project$Main$viewLink = F2(
-	function (rootPath, path) {
-		var url = function () {
-			if (rootPath.$ === 'Just') {
-				var r = rootPath.a;
-				return '/' + (r + path);
-			} else {
-				return path;
-			}
-		}();
-		return A2(
-			$elm$html$Html$li,
-			_List_Nil,
-			_List_fromArray(
-				[
-					A2(
-					$elm$html$Html$a,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$href(url)
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text(path)
-						]))
-				]));
-	});
 var $elm$virtual_dom$VirtualDom$attribute = F2(
 	function (key, value) {
 		return A2(
@@ -8549,18 +8968,7 @@ var $author$project$Main$view = function (model) {
 				$author$project$Route$toString(model.route),
 				_List_fromArray(
 					[
-						$elm$html$Html$text('The current route is: ' + routeName),
-						A2(
-						$elm$html$Html$ul,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('tree-view')
-							]),
-						_List_fromArray(
-							[
-								A2($author$project$Main$viewLink, model.rootPath, '/'),
-								A2($author$project$Main$viewLink, model.rootPath, '/bad-link')
-							])),
+						$author$project$Main$menuBar(model),
 						$author$project$Main$pageSpecificView(model),
 						A2(
 						$elm$html$Html$map,
